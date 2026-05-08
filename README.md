@@ -3,7 +3,7 @@
 > One click to save academic papers as Obsidian-ready Markdown files with auto-downloaded PDFs.
 
 # Demonstration
-![after adding to extension and finish download settings, you can click the icon and collect the paper.](/home/osako/projects/paper_one_step/demo/one_click.png)
+![after adding to extension and finish download settings, you can click the icon and collect the paper.](https://github.com/Osak0/Free-papers-collector/blob/main/demo/one_click.png）
 ![the metadata you can set](/home/osako/projects/paper_one_step/demo/sidebar.png)
 ![your obsidian repo](/home/osako/projects/paper_one_step/demo/obsidian_repo.png)
 
