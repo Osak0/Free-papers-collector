@@ -3,9 +3,9 @@
 > One click to save academic papers as Obsidian-ready Markdown files with auto-downloaded PDFs.
 
 # Demonstration
-![after adding to extension and finish download settings, you can click the icon and collect the paper.](https://github.com/Osak0/Free-papers-collector/blob/main/demo/one_click.png）
-![the metadata you can set](/home/osako/projects/paper_one_step/demo/sidebar.png)
-![your obsidian repo](/home/osako/projects/paper_one_step/demo/obsidian_repo.png)
+![after adding to extension and finish download settings, you can click the icon and collect the paper.](https://github.com/Osak0/Free-papers-collector/blob/main/demo/one_click.png)
+![the metadata you can set](https://github.com/Osak0/Free-papers-collector/blob/main/demo/sidebar.png)
+![your obsidian repo](https://github.com/Osak0/Free-papers-collector/blob/main/demo/obsidian_repo.png)
 
 PaperOneStep is a Chrome extension that clips academic paper pages into clean Markdown files — complete with YAML frontmatter, metadata tables, auto-generated tags, and a local PDF copy. Designed specifically for the **Obsidian + browser** research workflow.
 
