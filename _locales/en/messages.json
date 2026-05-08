@@ -1,0 +1,89 @@
+{
+  "extName": {
+    "message": "Paper One Step"
+  },
+  "extDesc": {
+    "message": "Extract arXiv metadata, download PDF, and create Obsidian Markdown notes."
+  },
+  "extExtracting": {
+    "message": "Extracting metadata..."
+  },
+  "extTitle": {
+    "message": "Title"
+  },
+  "extAuthors": {
+    "message": "Authors"
+  },
+  "extYear": {
+    "message": "Year"
+  },
+  "extVenue": {
+    "message": "Venue"
+  },
+  "extTags": {
+    "message": "Tags"
+  },
+  "extTagPlaceholder": {
+    "message": "Type tag and press Enter..."
+  },
+  "extAbstract": {
+    "message": "Abstract"
+  },
+  "extAppendTags": {
+    "message": "Append #tags at bottom"
+  },
+  "extSavePath": {
+    "message": "Save Path"
+  },
+  "extSaveClose": {
+    "message": "Save & Close"
+  },
+  "extCancel": {
+    "message": "Cancel"
+  },
+  "optTitle": {
+    "message": "Settings"
+  },
+  "optSavePathTitle": {
+    "message": "Save Directory"
+  },
+  "optSavePathHint": {
+    "message": "Subfolder relative to the browser download directory"
+  },
+  "optDefaultTagsTitle": {
+    "message": "Default Tags"
+  },
+  "optDefaultTagsHint": {
+    "message": "Comma-separated tags added by default"
+  },
+  "optTagMappingsTitle": {
+    "message": "Tag Mappings"
+  },
+  "optTagMappingsHint": {
+    "message": "Map categories to custom tags"
+  },
+  "optAddMapping": {
+    "message": "+ Add Rule"
+  },
+  "optSaveSettings": {
+    "message": "Save Settings"
+  },
+  "optSettingsSaved": {
+    "message": "Settings saved successfully!"
+  },
+  "optTemplateTitle": {
+    "message": "Markdown Template"
+  },
+  "optTemplateHint": {
+    "message": "Variables: title, authors, authors_wikilinks, year, venue, preprint_year, preprint_venue, published_year, published_venue, tags, arxiv_id, doi, pdf_url, web_url, abstract, safe_title, citation_count, bibtex."
+  },
+  "optTemplateReset": {
+    "message": "Reset to Default"
+  },
+  "optFilenameTitle": {
+    "message": "File Naming Rule"
+  },
+  "optFilenameHint": {
+    "message": "Variables: {{safe_title}}, {{first_author}}, {{year}}"
+  }
+}

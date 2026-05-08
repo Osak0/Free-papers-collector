@@ -1,0 +1,61 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "version": "1.3",
+  "description": "__MSG_extDesc__",
+  "default_locale": "en",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "storage",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "*://arxiv.org/abs/*",
+    "*://openreview.net/forum*",
+    "*://www.semanticscholar.org/paper/*",
+    "*://aclanthology.org/*",
+    "*://ieeexplore.ieee.org/document/*",
+    "*://link.springer.com/article/*",
+    "*://link.springer.com/chapter/*",
+    "*://www.nature.com/articles/*",
+    "*://www.science.org/doi/*",
+    "*://api.semanticscholar.org/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://arxiv.org/abs/*",
+        "*://openreview.net/forum*",
+        "*://www.semanticscholar.org/paper/*",
+        "*://aclanthology.org/*",
+        "*://ieeexplore.ieee.org/document/*",
+        "*://link.springer.com/article/*",
+        "*://link.springer.com/chapter/*",
+        "*://www.nature.com/articles/*",
+        "*://www.science.org/doi/*"
+      ],
+      "js": ["content_script.js"]
+    }
+  ],
+
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "side_panel": {
+    "default_path": "popup/popup.html"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": false
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "paperonestep@example.com",
+      "strict_min_version": "109.0"
+    }
+  }
+}

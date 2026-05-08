@@ -1,0 +1,89 @@
+{
+  "extName": {
+    "message": "Paper One Step (论文一键剪藏)"
+  },
+  "extDesc": {
+    "message": "提取 arXiv 论文元数据，一键下载 PDF 并生成适配 Obsidian 的 Markdown 文件。"
+  },
+  "extExtracting": {
+    "message": "正在提取元数据..."
+  },
+  "extTitle": {
+    "message": "标题"
+  },
+  "extAuthors": {
+    "message": "作者"
+  },
+  "extYear": {
+    "message": "年份"
+  },
+  "extVenue": {
+    "message": "出处"
+  },
+  "extTags": {
+    "message": "标签"
+  },
+  "extTagPlaceholder": {
+    "message": "输入标签后按回车..."
+  },
+  "extAbstract": {
+    "message": "摘要"
+  },
+  "extAppendTags": {
+    "message": "在正文底部追加 #标签"
+  },
+  "extSavePath": {
+    "message": "保存路径"
+  },
+  "extSaveClose": {
+    "message": "保存并关闭"
+  },
+  "extCancel": {
+    "message": "取消"
+  },
+  "optTitle": {
+    "message": "设置"
+  },
+  "optSavePathTitle": {
+    "message": "保存路径"
+  },
+  "optSavePathHint": {
+    "message": "相对于浏览器下载目录的子文件夹"
+  },
+  "optDefaultTagsTitle": {
+    "message": "默认标签"
+  },
+  "optDefaultTagsHint": {
+    "message": "每次保存时自动添加的标签，用逗号分隔"
+  },
+  "optTagMappingsTitle": {
+    "message": "标签映射规则"
+  },
+  "optTagMappingsHint": {
+    "message": "根据 arXiv 分类自动生成的标签"
+  },
+  "optAddMapping": {
+    "message": "+ 添加规则"
+  },
+  "optSaveSettings": {
+    "message": "保存设置"
+  },
+  "optSettingsSaved": {
+    "message": "设置已保存！"
+  },
+  "optTemplateTitle": {
+    "message": "Markdown 模板"
+  },
+  "optTemplateHint": {
+    "message": "变量: title, authors, authors_wikilinks, year, venue, preprint_year, preprint_venue, published_year, published_venue, tags, arxiv_id, doi, pdf_url, web_url, abstract, safe_title, citation_count, bibtex。"
+  },
+  "optTemplateReset": {
+    "message": "恢复默认模板"
+  },
+  "optFilenameTitle": {
+    "message": "文件命名规则"
+  },
+  "optFilenameHint": {
+    "message": "可用变量: {{safe_title}}, {{first_author}}, {{year}}"
+  }
+}
