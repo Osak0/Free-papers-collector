@@ -237,7 +237,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (!data || !data.title) {
-      sendResponse({ error: '无法在此页面提取论文信息 (Unsupported page)' });
+      sendResponse({ error: chrome.i18n.getMessage('extUnsupportedPage') || 'Unsupported page: paper metadata could not be extracted.' });
       return false;
     }
 

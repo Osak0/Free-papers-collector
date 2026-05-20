@@ -3,10 +3,34 @@
     "message": "Paper One Step"
   },
   "extDesc": {
-    "message": "Extract arXiv metadata, download PDF, and create Obsidian Markdown notes."
+    "message": "Collect academic paper metadata, download PDFs, and create Obsidian Markdown notes."
   },
   "extExtracting": {
     "message": "Extracting metadata..."
+  },
+  "extQueryingSemanticScholar": {
+    "message": "Querying Semantic Scholar API..."
+  },
+  "extUnsupportedPage": {
+    "message": "Unsupported page: paper metadata could not be extracted."
+  },
+  "extExtractionFailed": {
+    "message": "Extraction failed."
+  },
+  "extSaving": {
+    "message": "Saving..."
+  },
+  "extSaveFailed": {
+    "message": "Save failed."
+  },
+  "extPdfSkipped": {
+    "message": "Markdown saved, but no PDF URL was found."
+  },
+  "extPdfFailed": {
+    "message": "Markdown saved, but PDF download failed."
+  },
+  "extTimelineHint": {
+    "message": "Timeline: $1 -> $2 ($3)"
   },
   "extTitle": {
     "message": "Title"
@@ -41,6 +65,18 @@
   "extCancel": {
     "message": "Cancel"
   },
+  "notifySavedTitle": {
+    "message": "PaperOneStep"
+  },
+  "notifySavedMessage": {
+    "message": "Saved: $1"
+  },
+  "notifyPdfSkipped": {
+    "message": "PDF skipped: no PDF URL."
+  },
+  "notifyPdfFailed": {
+    "message": "PDF download failed."
+  },
   "optTitle": {
     "message": "Settings"
   },
@@ -60,10 +96,13 @@
     "message": "Tag Mappings"
   },
   "optTagMappingsHint": {
-    "message": "Map categories to custom tags"
+    "message": "Map paper categories to custom tags"
   },
   "optAddMapping": {
     "message": "+ Add Rule"
+  },
+  "optDeleteMapping": {
+    "message": "Delete"
   },
   "optSaveSettings": {
     "message": "Save Settings"

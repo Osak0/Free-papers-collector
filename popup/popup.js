@@ -152,7 +152,7 @@ cancelBtn.addEventListener('click', () => window.close());
 saveBtn.addEventListener('click', async () => {
   if (!paperData) return;
   saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving...';
+  saveBtn.textContent = chrome.i18n.getMessage('extSaving') || 'Saving...';
 
   const tags = Array.from(tagsSet);
   const updatedData = {
@@ -162,12 +162,20 @@ saveBtn.addEventListener('click', async () => {
   };
 
   try {
-    await chrome.runtime.sendMessage({
+    const response = await chrome.runtime.sendMessage({
       action: 'save',
       data: updatedData,
       tags: tags,
       inlineTags: inlineTagsCheckbox.checked
     });
+    if (!response || !response.success) {
+      throw new Error(response && response.error ? response.error : (chrome.i18n.getMessage('extSaveFailed') || 'Save failed.'));
+    }
+    if (response.pdfSkipped || response.pdfError) {
+      console.warn(response.pdfSkipped
+        ? (chrome.i18n.getMessage('extPdfSkipped') || 'Markdown saved, but no PDF URL was found.')
+        : (chrome.i18n.getMessage('extPdfFailed') || 'Markdown saved, but PDF download failed.'));
+    }
 
     const config = await chrome.storage.local.get(['historyTags']);
     const history = new Set(config.historyTags || []);
@@ -177,8 +185,8 @@ saveBtn.addEventListener('click', async () => {
     window.close();
   } catch (err) {
     saveBtn.disabled = false;
-    saveBtn.textContent = 'Save & Close';
-    showError('Save failed: ' + err.message);
+    saveBtn.textContent = chrome.i18n.getMessage('extSaveClose') || 'Save & Close';
+    showError((chrome.i18n.getMessage('extSaveFailed') || 'Save failed.') + ' ' + err.message);
   }
 });
 
@@ -202,7 +210,7 @@ saveBtn.addEventListener('click', async () => {
       return;
     }
 
-    loadingEl.innerHTML = `<svg class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span data-i18n="extExtracting">Querying Semantic Scholar API...</span>`;
+    loadingEl.innerHTML = `<svg class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>${chrome.i18n.getMessage('extQueryingSemanticScholar') || 'Querying Semantic Scholar API...'}</span>`;
     
     paperData = await enrichWithS2(response);
 
@@ -220,7 +228,11 @@ saveBtn.addEventListener('click', async () => {
     const timelineHint = document.getElementById('timelineHint');
     if (paperData.published_year && paperData.published_venue && 
         (paperData.published_year !== paperData.year || paperData.published_venue !== paperData.venue)) {
-      timelineHint.textContent = `Timeline: ${paperData.year || 'Preprint'} ➔ ${paperData.published_year} (${paperData.published_venue})`;
+      timelineHint.textContent = chrome.i18n.getMessage('extTimelineHint', [
+        paperData.year || 'Preprint',
+        paperData.published_year,
+        paperData.published_venue
+      ]) || `Timeline: ${paperData.year || 'Preprint'} -> ${paperData.published_year} (${paperData.published_venue})`;
       timelineHint.classList.remove('hidden');
     }
 
@@ -276,6 +288,6 @@ saveBtn.addEventListener('click', async () => {
     formEl.classList.remove('hidden');
     pathCard.classList.remove('hidden');
   } catch (err) {
-    showError('Extraction failed: ' + err.message);
+    showError((chrome.i18n.getMessage('extExtractionFailed') || 'Extraction failed.') + ' ' + err.message);
   }
 })();

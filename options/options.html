@@ -12,22 +12,22 @@
     </div>
 
     <div class="field">
-      <label data-i18n="optSavePathTitle">Save Directory <span class="hint-inline" data-i18n="optSavePathHint">(Subfolder relative to the browser download directory)</span></label>
+      <label><span data-i18n="optSavePathTitle">Save Directory</span> <span class="hint-inline" data-i18n="optSavePathHint">(Subfolder relative to the browser download directory)</span></label>
       <input type="text" id="saveSubdir" class="input-reset" placeholder="Papers/arxiv">
     </div>
 
     <div class="field">
-      <label data-i18n="optFilenameTitle">File Naming Rule <span class="hint-inline" data-i18n="optFilenameHint">(Variables: {{safe_title}}, {{first_author}}, {{year}})</span></label>
+      <label><span data-i18n="optFilenameTitle">File Naming Rule</span> <span class="hint-inline" data-i18n="optFilenameHint">(Variables: {{safe_title}}, {{first_author}}, {{year}})</span></label>
       <input type="text" id="filenameRule" class="input-reset" placeholder="{{safe_title}}">
     </div>
 
     <div class="field">
-      <label data-i18n="optDefaultTagsTitle">Default Tags <span class="hint-inline" data-i18n="optDefaultTagsHint">(Comma-separated tags added by default)</span></label>
+      <label><span data-i18n="optDefaultTagsTitle">Default Tags</span> <span class="hint-inline" data-i18n="optDefaultTagsHint">(Comma-separated tags added by default)</span></label>
       <input type="text" id="defaultTags" class="input-reset" placeholder="status/read">
     </div>
 
     <div class="field mapping-section">
-      <label data-i18n="optTagMappingsTitle">Tag Mappings <span class="hint-inline" data-i18n="optTagMappingsHint">(Map categories to custom tags)</span></label>
+      <label><span data-i18n="optTagMappingsTitle">Tag Mappings</span> <span class="hint-inline" data-i18n="optTagMappingsHint">(Map categories to custom tags)</span></label>
       <div id="mappingsContainer" class="mappings"></div>
       <button id="addMappingBtn" class="btn btn-secondary btn-small" data-i18n="optAddMapping">+ Add Rule</button>
     </div>
@@ -36,7 +36,7 @@
       <label data-i18n="optTemplateTitle">Markdown Template</label>
       <p class="hint" data-i18n="optTemplateHint">Use {{variable}} for interpolation. Available: title, authors, year, venue, tags, arxiv_id, doi, pdf_url, web_url, abstract, safe_title.</p>
       <textarea id="markdownTemplate" class="input-textarea"></textarea>
-      <button id="resetTemplateBtn" class="btn btn-secondary btn-small" data-i18n="optTemplateReset">↺ Reset to Default</button>
+      <button id="resetTemplateBtn" class="btn btn-secondary btn-small" data-i18n="optTemplateReset">Reset to Default</button>
     </div>
 
     <div id="status" class="status hidden"></div>

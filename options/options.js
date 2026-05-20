@@ -62,9 +62,9 @@ function createMappingRow(category, tags) {
   row.className = 'mapping-row';
   row.innerHTML = `
     <input type="text" class="input-reset mapping-category" value="${escapeHtml(category || '')}" placeholder="cs.CL">
-    <span class="arrow">→</span>
+    <span class="arrow">&rarr;</span>
     <input type="text" class="input-reset mapping-tags" value="${escapeHtml((tags || []).join(', '))}" placeholder="nlp, llm">
-    <button class="btn-remove" title="删除">×</button>
+    <button class="btn-remove" title="${chrome.i18n.getMessage('optDeleteMapping') || 'Delete'}">&times;</button>
   `;
   row.querySelector('.btn-remove').addEventListener('click', () => row.remove());
   return row;

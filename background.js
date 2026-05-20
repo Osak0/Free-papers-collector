@@ -149,7 +149,7 @@ function markdownToDataUri(markdown) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'save') {
     handleSave(message.data, message.tags, message.inlineTags)
-      .then(() => sendResponse({ success: true }))
+      .then((result) => sendResponse({ success: true, ...result }))
       .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
@@ -162,15 +162,27 @@ async function handleSave(data, tags, inlineTags) {
 
   const pdfFilename = `${subdir}/${filename}.pdf`;
   const mdFilename = `${subdir}/${filename}.md`;
+  const result = {
+    pdfDownloaded: false,
+    pdfSkipped: false,
+    pdfError: ''
+  };
 
-  try {
-    await chrome.downloads.download({
-      url: data.pdf_url,
-      filename: pdfFilename,
-      saveAs: false
-    });
-  } catch (err) {
-    console.warn('PDF download failed:', err);
+  if (data.pdf_url) {
+    try {
+      await chrome.downloads.download({
+        url: data.pdf_url,
+        filename: pdfFilename,
+        saveAs: false
+      });
+      result.pdfDownloaded = true;
+    } catch (err) {
+      result.pdfError = err.message || String(err);
+      console.warn('PDF download failed:', err);
+    }
+  } else {
+    result.pdfSkipped = true;
+    console.warn('PDF download skipped: no PDF URL was extracted.');
   }
 
   const markdown = generateMarkdown(data, tags, inlineTags, config.markdownTemplate);
@@ -182,10 +194,21 @@ async function handleSave(data, tags, inlineTags) {
     saveAs: false
   });
 
-  chrome.notifications.create({
-    type: 'basic',
-    iconUrl: 'icons/icon48.png',
-    title: 'PaperOneStep',
-    message: `Saved: ${data.title || data.arxiv_id}`
-  });
+  if (chrome.notifications && chrome.notifications.create) {
+    const title = chrome.i18n.getMessage('notifySavedTitle') || 'PaperOneStep';
+    let message = chrome.i18n.getMessage('notifySavedMessage', [data.title || data.arxiv_id || filename]) || `Saved: ${data.title || data.arxiv_id || filename}`;
+    if (result.pdfSkipped) {
+      message += ` ${chrome.i18n.getMessage('notifyPdfSkipped') || 'PDF skipped: no PDF URL.'}`;
+    } else if (result.pdfError) {
+      message += ` ${chrome.i18n.getMessage('notifyPdfFailed') || 'PDF download failed.'}`;
+    }
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon48.png',
+      title,
+      message
+    });
+  }
+
+  return result;
 }

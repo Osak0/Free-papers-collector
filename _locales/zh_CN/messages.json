@@ -1,12 +1,36 @@
 {
   "extName": {
-    "message": "Paper One Step (论文一键剪藏)"
+    "message": "Paper One Step（一键论文采集）"
   },
   "extDesc": {
-    "message": "提取 arXiv 论文元数据，一键下载 PDF 并生成适配 Obsidian 的 Markdown 文件。"
+    "message": "采集论文元数据，下载 PDF，并生成适配 Obsidian 的 Markdown 笔记。"
   },
   "extExtracting": {
     "message": "正在提取元数据..."
+  },
+  "extQueryingSemanticScholar": {
+    "message": "正在查询 Semantic Scholar API..."
+  },
+  "extUnsupportedPage": {
+    "message": "不支持当前页面：未能提取论文元数据。"
+  },
+  "extExtractionFailed": {
+    "message": "提取失败。"
+  },
+  "extSaving": {
+    "message": "正在保存..."
+  },
+  "extSaveFailed": {
+    "message": "保存失败。"
+  },
+  "extPdfSkipped": {
+    "message": "Markdown 已保存，但没有找到 PDF 链接。"
+  },
+  "extPdfFailed": {
+    "message": "Markdown 已保存，但 PDF 下载失败。"
+  },
+  "extTimelineHint": {
+    "message": "时间线：$1 -> $2（$3）"
   },
   "extTitle": {
     "message": "标题"
@@ -18,7 +42,7 @@
     "message": "年份"
   },
   "extVenue": {
-    "message": "出处"
+    "message": "发表场所"
   },
   "extTags": {
     "message": "标签"
@@ -30,7 +54,7 @@
     "message": "摘要"
   },
   "extAppendTags": {
-    "message": "在正文底部追加 #标签"
+    "message": "在正文末尾追加 #标签"
   },
   "extSavePath": {
     "message": "保存路径"
@@ -41,29 +65,44 @@
   "extCancel": {
     "message": "取消"
   },
+  "notifySavedTitle": {
+    "message": "PaperOneStep"
+  },
+  "notifySavedMessage": {
+    "message": "已保存：$1"
+  },
+  "notifyPdfSkipped": {
+    "message": "已跳过 PDF：没有找到 PDF 链接。"
+  },
+  "notifyPdfFailed": {
+    "message": "PDF 下载失败。"
+  },
   "optTitle": {
     "message": "设置"
   },
   "optSavePathTitle": {
-    "message": "保存路径"
+    "message": "保存目录"
   },
   "optSavePathHint": {
-    "message": "相对于浏览器下载目录的子文件夹"
+    "message": "相对于浏览器下载目录的子目录"
   },
   "optDefaultTagsTitle": {
     "message": "默认标签"
   },
   "optDefaultTagsHint": {
-    "message": "每次保存时自动添加的标签，用逗号分隔"
+    "message": "每次保存时自动添加的标签，用英文逗号分隔"
   },
   "optTagMappingsTitle": {
     "message": "标签映射规则"
   },
   "optTagMappingsHint": {
-    "message": "根据 arXiv 分类自动生成的标签"
+    "message": "将论文分类映射到自定义标签"
   },
   "optAddMapping": {
     "message": "+ 添加规则"
+  },
+  "optDeleteMapping": {
+    "message": "删除"
   },
   "optSaveSettings": {
     "message": "保存设置"
@@ -75,7 +114,7 @@
     "message": "Markdown 模板"
   },
   "optTemplateHint": {
-    "message": "变量: title, authors, authors_wikilinks, year, venue, preprint_year, preprint_venue, published_year, published_venue, tags, arxiv_id, doi, pdf_url, web_url, abstract, safe_title, citation_count, bibtex。"
+    "message": "可用变量：title, authors, authors_wikilinks, year, venue, preprint_year, preprint_venue, published_year, published_venue, tags, arxiv_id, doi, pdf_url, web_url, abstract, safe_title, citation_count, bibtex。"
   },
   "optTemplateReset": {
     "message": "恢复默认模板"
@@ -84,6 +123,6 @@
     "message": "文件命名规则"
   },
   "optFilenameHint": {
-    "message": "可用变量: {{safe_title}}, {{first_author}}, {{year}}"
+    "message": "可用变量：{{safe_title}}, {{first_author}}, {{year}}"
   }
 }
