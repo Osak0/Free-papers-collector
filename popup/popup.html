@@ -44,6 +44,15 @@
       </div>
       <div id="timelineHint" style="font-size: 11px; color: var(--text-muted); margin-top: -8px; margin-bottom: 8px;" class="hidden"></div>
 
+      <div class="field publication-card">
+        <div class="section-header">
+          <span data-i18n="extPublication">Publication</span>
+          <span id="publicationStatus" class="status-pill"></span>
+        </div>
+        <div id="publicationSummary" class="publication-summary"></div>
+        <div id="publicationTimeline" class="publication-timeline"></div>
+      </div>
+
       <div class="field">
         <label data-i18n="extTags">Tags</label>
         <div class="tags-container" id="tagsContainer"></div>
@@ -51,6 +60,11 @@
           <input type="text" id="tagInput" list="tagSuggestions" class="input" data-i18n-placeholder="extTagPlaceholder" placeholder="Type tag and press Enter...">
           <datalist id="tagSuggestions"></datalist>
         </div>
+      </div>
+
+      <div class="field">
+        <label data-i18n="extNote">Note</label>
+        <textarea id="noteInput" class="note-input" data-i18n-placeholder="extNotePlaceholder" placeholder="Add your reading note..."></textarea>
       </div>
 
       <div class="field">
@@ -65,6 +79,13 @@
         <label>
           <input type="checkbox" id="inlineTagsCheckbox" checked>
           <span data-i18n="extAppendTags">Append #tags at bottom</span>
+        </label>
+      </div>
+
+      <div class="field checkbox-field">
+        <label>
+          <input type="checkbox" id="downloadPdfCheckbox" checked>
+          <span data-i18n="extDownloadPdf">Download PDF</span>
         </label>
       </div>
 

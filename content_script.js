@@ -35,6 +35,129 @@ function getAllMeta(name) {
     .map(el => el.getAttribute('content'));
 }
 
+function getFirstMeta(names) {
+  for (const name of names) {
+    const value = getMeta(name);
+    if (value) return value;
+  }
+  return null;
+}
+
+function getAllFirstAvailableMeta(names) {
+  for (const name of names) {
+    const values = getAllMeta(name).filter(Boolean);
+    if (values.length > 0) return values;
+  }
+  return [];
+}
+
+function parseYear(value) {
+  const match = String(value || '').match(/\d{4}/);
+  return match ? parseInt(match[0], 10) : null;
+}
+
+function normalizeDoi(value) {
+  if (!value) return null;
+  return value
+    .replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '')
+    .replace(/^doi:\s*/i, '')
+    .trim();
+}
+
+function absolutizeUrl(url) {
+  if (!url) return '';
+  try {
+    return new URL(url, window.location.href).href;
+  } catch (err) {
+    return url;
+  }
+}
+
+function findPdfUrl(selectors) {
+  for (const selector of selectors) {
+    const link = document.querySelector(selector);
+    const href = link && (link.href || link.getAttribute('href'));
+    if (href) return absolutizeUrl(href);
+  }
+  return '';
+}
+
+function splitMetaList(values) {
+  return values
+    .flatMap(value => String(value || '').split(/[;,]/))
+    .map(value => value.trim())
+    .filter(Boolean);
+}
+
+const VENUE_PATTERNS = [
+  { pattern: /\bNeurIPS\b|\bNIPS\b/i, venue: 'NeurIPS' },
+  { pattern: /\bICML\b/i, venue: 'ICML' },
+  { pattern: /\bICLR\b/i, venue: 'ICLR' },
+  { pattern: /\bCVPR\b/i, venue: 'CVPR' },
+  { pattern: /\bICCV\b/i, venue: 'ICCV' },
+  { pattern: /\bECCV\b/i, venue: 'ECCV' },
+  { pattern: /\bACL\b/i, venue: 'ACL' },
+  { pattern: /\bEMNLP\b/i, venue: 'EMNLP' },
+  { pattern: /\bNAACL\b/i, venue: 'NAACL' },
+  { pattern: /\bAAAI\b/i, venue: 'AAAI' },
+  { pattern: /\bIJCAI\b/i, venue: 'IJCAI' },
+  { pattern: /\bKDD\b/i, venue: 'KDD' },
+  { pattern: /\bSIGIR\b/i, venue: 'SIGIR' },
+  { pattern: /\bWWW\b/i, venue: 'WWW' }
+];
+
+function parsePublicationFromComments(comments) {
+  if (!comments) return null;
+  const year = parseYear(comments);
+
+  for (const { pattern, venue } of VENUE_PATTERNS) {
+    if (pattern.test(comments)) {
+      return {
+        venue,
+        year,
+        source: comments
+      };
+    }
+  }
+
+  const explicitMatch = comments.match(/(?:Accepted (?:at|to|by|in)|Published (?:at|in|as)|Appears (?:at|in)|To appear (?:at|in)|Proceedings of (?:the\s+)?)(.+?)(?:\.|$)/i);
+  if (explicitMatch) {
+    return {
+      venue: explicitMatch[1].trim(),
+      year,
+      source: comments
+    };
+  }
+
+  return null;
+}
+
+function parseArxivDateline() {
+  const dateline = document.querySelector('.dateline')?.textContent || '';
+  const submittedMatch = dateline.match(/Submitted on\s+(.+?)\s+\(v1\)/i);
+  const revisedMatch = dateline.match(/last revised\s+(.+?)\s+\([^)]*v(\d+)\)/i);
+
+  return {
+    submittedDate: submittedMatch ? submittedMatch[1].trim() : '',
+    revisionDate: revisedMatch ? revisedMatch[1].trim() : '',
+    version: revisedMatch ? `v${revisedMatch[2]}` : ''
+  };
+}
+
+function buildPublicationTimeline(data) {
+  const timeline = [];
+  if (data.preprint_year || data.arxiv_submitted_date) {
+    timeline.push(`${data.preprint_year || data.arxiv_submitted_date} arXiv preprint`);
+  }
+  if (data.arxiv_version || data.arxiv_revision_date) {
+    timeline.push([data.arxiv_revision_date, data.arxiv_version].filter(Boolean).join(' arXiv '));
+  }
+  if (data.published_venue || data.published_year) {
+    timeline.push([data.published_venue, data.published_year].filter(Boolean).join(' '));
+  }
+  return timeline;
+}
+
 function sanitizeTagName(raw) {
   return raw
     .toLowerCase()
@@ -120,29 +243,43 @@ function extractArxiv() {
     }
   }
 
-  let venue = 'arXiv preprint';
-  const vMatch = comments.match(/(?:Accepted (?:at|to|by|in)|Published (?:at|in|as)|Appears (?:at|in)|Proceedings of (?:the\s+)?)(.+?)(?:\.|$)/i);
-  if (vMatch) venue = vMatch[1].trim();
-
-  let year = null;
+  let preprintYear = null;
   const dateStr = getMeta('citation_date') || getMeta('citation_online_date');
-  if (dateStr) year = parseInt(dateStr.split(/[\/-]/)[0], 10);
+  if (dateStr) preprintYear = parseInt(dateStr.split(/[\/-]/)[0], 10);
 
-  return {
+  const arxivTimeline = parseArxivDateline();
+  const published = parsePublicationFromComments(comments);
+  const latestYear = published?.year || preprintYear;
+  const latestVenue = published?.venue || 'arXiv preprint';
+
+  const data = {
     title: getMeta('citation_title') || document.querySelector('h1.title')?.textContent.replace('Title:', '').trim(),
     authors: getAllMeta('citation_author'),
-    year,
+    year: latestYear,
     abstract: getMeta('citation_abstract') || document.querySelector('blockquote.abstract')?.textContent.replace('Abstract:', '').trim(),
     pdf_url: getMeta('citation_pdf_url') || `https://arxiv.org/pdf/${arxivId}`,
     html_url: `https://arxiv.org/html/${arxivId}`,
     web_url: `https://arxiv.org/abs/${arxivId}`,
     arxiv_id: arxivId,
     categories,
-    venue,
+    venue: latestVenue,
     comments,
     doi: getMeta('citation_doi') || document.querySelector('.abs-license a[href*="doi.org"]')?.href.match(/doi\.org\/(.+)/)?.[1],
-    domain: 'arxiv'
+    domain: 'arxiv',
+    preprint_year: preprintYear,
+    preprint_venue: 'arXiv preprint',
+    published_year: published?.year || null,
+    published_venue: published?.venue || '',
+    publication_status: published?.venue ? 'published' : 'preprint',
+    arxiv_submitted_date: arxivTimeline.submittedDate,
+    arxiv_revision_date: arxivTimeline.revisionDate,
+    arxiv_version: arxivTimeline.version,
+    latest_year: latestYear,
+    latest_venue: latestVenue
   };
+
+  data.publication_timeline = buildPublicationTimeline(data);
+  return data;
 }
 
 function extractOpenReview() {
@@ -157,7 +294,7 @@ function extractOpenReview() {
   const venue = getMeta('citation_journal_title') || 'OpenReview';
   const arxivId = null;
 
-  return {
+  const data = {
     title,
     authors: getAllMeta('citation_author'),
     year,
@@ -170,8 +307,13 @@ function extractOpenReview() {
     venue,
     comments: venue,
     doi: null,
-    domain: 'openreview'
+    domain: 'openreview',
+    latest_year: year,
+    latest_venue: venue,
+    publication_status: 'preprint'
   };
+  data.publication_timeline = buildPublicationTimeline(data);
+  return data;
 }
 
 function extractSemanticScholar() {
@@ -186,7 +328,7 @@ function extractSemanticScholar() {
 
   let venue = document.querySelector('span[data-test-id="paper-venue"]')?.textContent || 'Semantic Scholar';
 
-  return {
+  const data = {
     title,
     authors,
     year,
@@ -199,8 +341,103 @@ function extractSemanticScholar() {
     venue,
     comments: venue,
     doi: null,
-    domain: 'semanticscholar'
+    domain: 'semanticscholar',
+    published_year: year,
+    published_venue: venue,
+    latest_year: year,
+    latest_venue: venue,
+    publication_status: 'published'
   };
+  data.publication_timeline = buildPublicationTimeline(data);
+  return data;
+}
+
+function extractPublisherPaper(domain, defaultVenue, pdfSelectors) {
+  const title = getFirstMeta(['citation_title', 'dc.Title', 'DC.Title', 'og:title', 'twitter:title']) || document.querySelector('h1')?.textContent.trim();
+  if (!title) return null;
+
+  const authors = getAllFirstAvailableMeta(['citation_author', 'dc.Creator', 'DC.Creator', 'dc.creator', 'author']);
+  const date = getFirstMeta(['citation_publication_date', 'citation_date', 'dc.Date', 'DC.Date', 'dc.date']);
+  const year = parseYear(date);
+  const doi = normalizeDoi(getFirstMeta(['citation_doi', 'dc.Identifier', 'DC.Identifier', 'dc.identifier']));
+  const venue = getFirstMeta([
+    'citation_journal_title',
+    'citation_conference_title',
+    'citation_inbook_title',
+    'dc.Source',
+    'DC.Source',
+    'og:site_name'
+  ]) || defaultVenue;
+  const categories = splitMetaList([
+    ...getAllMeta('citation_keywords'),
+    ...getAllMeta('dc.Subject'),
+    ...getAllMeta('DC.Subject'),
+    ...getAllMeta('keywords')
+  ]);
+
+  const data = {
+    title,
+    authors,
+    year,
+    abstract: getFirstMeta(['citation_abstract', 'dc.Description', 'DC.Description', 'description', 'og:description']) || '',
+    pdf_url: absolutizeUrl(getFirstMeta(['citation_pdf_url'])) || findPdfUrl(pdfSelectors),
+    html_url: '',
+    web_url: window.location.href,
+    arxiv_id: null,
+    categories,
+    venue,
+    comments: venue,
+    doi,
+    domain,
+    published_year: year,
+    published_venue: venue,
+    latest_year: year,
+    latest_venue: venue,
+    publication_status: 'published'
+  };
+  data.publication_timeline = buildPublicationTimeline(data);
+  return data;
+}
+
+function extractIEEE() {
+  return extractPublisherPaper('ieee', 'IEEE Xplore', [
+    'a[href*="/stamp/stamp.jsp"]',
+    'a[href*="/ielx/"]',
+    'a[href$=".pdf"]'
+  ]);
+}
+
+function extractACM() {
+  return extractPublisherPaper('acm', 'ACM Digital Library', [
+    'a[href*="/doi/pdf/"]',
+    'a[href*="/doi/epdf/"]',
+    'a[title*="PDF" i]',
+    'a[href$=".pdf"]'
+  ]);
+}
+
+function extractSpringer() {
+  return extractPublisherPaper('springer', 'Springer', [
+    'a.c-pdf-download__link',
+    'a[href*="/content/pdf/"]',
+    'a[href$=".pdf"]'
+  ]);
+}
+
+function extractNature() {
+  return extractPublisherPaper('nature', 'Nature', [
+    'a[data-track-action*="download pdf" i]',
+    'a[href*=".pdf"]',
+    'a[href$=".pdf"]'
+  ]);
+}
+
+function extractScience() {
+  return extractPublisherPaper('science', 'Science', [
+    'a[href*="/doi/pdf/"]',
+    'a[title*="PDF" i]',
+    'a[href$=".pdf"]'
+  ]);
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -214,6 +451,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       data = extractOpenReview();
     } else if (hostname.includes('semanticscholar.org')) {
       data = extractSemanticScholar();
+    } else if (hostname.includes('ieeexplore.ieee.org')) {
+      data = extractIEEE();
+    } else if (hostname.includes('dl.acm.org')) {
+      data = extractACM();
+    } else if (hostname.includes('link.springer.com')) {
+      data = extractSpringer();
+    } else if (hostname.includes('nature.com')) {
+      data = extractNature();
+    } else if (hostname.includes('science.org')) {
+      data = extractScience();
     } else {
       // Fallback
       const title = getMeta('citation_title') || getMeta('og:title') || document.title;
@@ -231,7 +478,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           venue: 'Web',
           comments: '',
           doi: getMeta('citation_doi'),
-          domain: 'unknown'
+          domain: 'unknown',
+          latest_year: parseInt((getMeta('citation_date') || '').split('-')[0], 10) || null,
+          latest_venue: 'Web',
+          publication_status: 'preprint',
+          publication_timeline: []
         };
       }
     }

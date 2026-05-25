@@ -29,6 +29,9 @@
   "extPdfFailed": {
     "message": "Markdown 已保存，但 PDF 下载失败。"
   },
+  "extPdfDisabled": {
+    "message": "Markdown 已保存，未下载 PDF。"
+  },
   "extTimelineHint": {
     "message": "时间线：$1 -> $2（$3）"
   },
@@ -44,11 +47,26 @@
   "extVenue": {
     "message": "发表场所"
   },
+  "extPublication": {
+    "message": "发表信息"
+  },
+  "extPublished": {
+    "message": "已发表"
+  },
+  "extPreprint": {
+    "message": "预印本"
+  },
   "extTags": {
     "message": "标签"
   },
   "extTagPlaceholder": {
     "message": "输入标签后按回车..."
+  },
+  "extNote": {
+    "message": "笔记"
+  },
+  "extNotePlaceholder": {
+    "message": "添加你的阅读笔记..."
   },
   "extAbstract": {
     "message": "摘要"
@@ -56,8 +74,17 @@
   "extAppendTags": {
     "message": "在正文末尾追加 #标签"
   },
+  "extDownloadPdf": {
+    "message": "下载 PDF"
+  },
+  "extPdfNotSaved": {
+    "message": "不会保存 PDF"
+  },
   "extSavePath": {
     "message": "保存路径"
+  },
+  "extInvalidSavePath": {
+    "message": "保存目录必须是浏览器下载目录内的相对路径。"
   },
   "extSaveClose": {
     "message": "保存并关闭"
@@ -77,6 +104,9 @@
   "notifyPdfFailed": {
     "message": "PDF 下载失败。"
   },
+  "notifyPdfDisabled": {
+    "message": "未下载 PDF。"
+  },
   "optTitle": {
     "message": "设置"
   },
@@ -84,7 +114,13 @@
     "message": "保存目录"
   },
   "optSavePathHint": {
-    "message": "相对于浏览器下载目录的子目录"
+    "message": "浏览器下载目录内的相对子目录"
+  },
+  "optDownloadPdfDefault": {
+    "message": "默认下载 PDF"
+  },
+  "optInvalidSavePath": {
+    "message": "保存目录必须是浏览器下载目录内的相对路径。"
   },
   "optDefaultTagsTitle": {
     "message": "默认标签"
@@ -114,7 +150,7 @@
     "message": "Markdown 模板"
   },
   "optTemplateHint": {
-    "message": "可用变量：title, authors, authors_wikilinks, year, venue, preprint_year, preprint_venue, published_year, published_venue, tags, arxiv_id, doi, pdf_url, web_url, abstract, safe_title, citation_count, bibtex。"
+    "message": "可用变量：title, authors, authors_wikilinks, year, venue, latest_year, latest_venue, preprint_year, preprint_venue, published_year, published_venue, publication_status, publication_timeline, tags, arxiv_id, doi, pdf_url, pdf_filename, pdf_link, web_url, abstract, safe_title, citation_count, note, bibtex。"
   },
   "optTemplateReset": {
     "message": "恢复默认模板"

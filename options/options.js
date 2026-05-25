@@ -16,21 +16,29 @@ title: "{{title}}"
 author: "{{authors}}"
 year: {{year}}
 venue: "{{venue}}"
+preprint_year: {{preprint_year}}
+preprint_venue: "{{preprint_venue}}"
+published_year: {{published_year}}
+published_venue: "{{published_venue}}"
+publication_status: "{{publication_status}}"
 tags: [{{tags}}]
 arxiv_id: "{{arxiv_id}}"
 doi: "{{doi}}"
-pdf: "[[{{safe_title}}.pdf]]"
-notes: ""
+pdf: "{{pdf_link}}"
 ---
 
 # {{title}}
 
 **Authors**: {{authors}}
-**Year**: {{year}}
-**Venue**: {{venue}}
+**Year**: {{latest_year}}
+**Venue**: {{latest_venue}}
 **URL**: [{{arxiv_id}}]({{web_url}})
-**PDF**: [[{{safe_title}}.pdf]]
+**PDF**: {{pdf_link}}
 {{doi_link}}
+
+## Publication Timeline
+
+{{publication_timeline}}
 
 ## Abstract
 
@@ -45,9 +53,18 @@ notes: ""
 > - Do **not** prefix tags with \`#\` in the Properties panel.
 
 {{inline_tags}}
+
+## Note
+
+{{note}}
+
+\`\`\`bibtex
+{{bibtex}}
+\`\`\`
 `;
 
 const saveSubdirInput = document.getElementById('saveSubdir');
+const downloadPdfByDefaultInput = document.getElementById('downloadPdfByDefault');
 const filenameRuleInput = document.getElementById('filenameRule');
 const defaultTagsInput = document.getElementById('defaultTags');
 const mappingsContainer = document.getElementById('mappingsContainer');
@@ -114,8 +131,21 @@ function showStatus(msg, type) {
   setTimeout(() => statusEl.classList.add('hidden'), 2500);
 }
 
+function isValidSaveSubdir(subdir) {
+  const cleaned = (subdir || '').trim().replace(/\\/g, '/');
+  if (!cleaned) return true;
+  if (cleaned.startsWith('/') || /^[a-zA-Z]:\//.test(cleaned)) return false;
+  return !cleaned.split('/').includes('..');
+}
+
 saveBtn.addEventListener('click', async () => {
   const saveSubdir = saveSubdirInput.value.trim() || 'Papers/arxiv';
+  if (!isValidSaveSubdir(saveSubdir)) {
+    showStatus(chrome.i18n.getMessage('optInvalidSavePath') || 'Save directory must be a relative path inside the browser download directory.', 'error');
+    return;
+  }
+
+  const downloadPdfByDefault = downloadPdfByDefaultInput.checked;
   const filenameRule = filenameRuleInput.value.trim() || '{{safe_title}}';
   const defaultTags = defaultTagsInput.value
     .split(',')
@@ -124,15 +154,45 @@ saveBtn.addEventListener('click', async () => {
   const tagMappings = getMappingsFromDOM();
   const markdownTemplate = templateInput.value;
 
-  await chrome.storage.local.set({ saveSubdir, filenameRule, defaultTags, tagMappings, markdownTemplate });
+  await chrome.storage.local.set({ saveSubdir, downloadPdfByDefault, filenameRule, defaultTags, tagMappings, markdownTemplate });
   showStatus(chrome.i18n.getMessage('optSettingsSaved') || 'Settings saved successfully!', 'success');
 });
 
 (async () => {
-  const result = await chrome.storage.local.get(['saveSubdir', 'filenameRule', 'defaultTags', 'tagMappings', 'markdownTemplate']);
+  const result = await chrome.storage.local.get(['saveSubdir', 'downloadPdfByDefault', 'filenameRule', 'defaultTags', 'tagMappings', 'markdownTemplate']);
   saveSubdirInput.value = result.saveSubdir || 'Papers/arxiv';
+  downloadPdfByDefaultInput.checked = result.downloadPdfByDefault !== false;
   filenameRuleInput.value = result.filenameRule || '{{safe_title}}';
   defaultTagsInput.value = (result.defaultTags || ['status/read']).join(', ');
   renderMappings(result.tagMappings || DEFAULT_MAPPINGS);
   templateInput.value = result.markdownTemplate || DEFAULT_TEMPLATE;
 })();
+const OPTIONS_NOTE_SECTION_HEADING_RE = /^#{1,6}\s+Note\s*$/im;
+
+function appendNoteSectionToSavedTemplate(template) {
+  if (typeof template !== 'string' || OPTIONS_NOTE_SECTION_HEADING_RE.test(template)) {
+    return template;
+  }
+
+  return `${template.replace(/\s+$/, '')}\n\n---\n\n# Note\n\n{{note}}\n`;
+}
+
+async function migrateOptionsMarkdownTemplateNoteSection() {
+  if (typeof chrome === 'undefined' || !chrome.storage?.local) {
+    return;
+  }
+
+  const { markdownTemplate } = await chrome.storage.local.get('markdownTemplate');
+  if (typeof markdownTemplate !== 'string' || !markdownTemplate.trim()) {
+    return;
+  }
+
+  const nextTemplate = appendNoteSectionToSavedTemplate(markdownTemplate);
+  if (nextTemplate !== markdownTemplate) {
+    await chrome.storage.local.set({ markdownTemplate: nextTemplate });
+  }
+}
+
+migrateOptionsMarkdownTemplateNoteSection().catch((error) => {
+  console.warn('Failed to migrate options markdown template note section:', error);
+});

@@ -16,6 +16,13 @@
       <input type="text" id="saveSubdir" class="input-reset" placeholder="Papers/arxiv">
     </div>
 
+    <div class="field checkbox-field">
+      <label>
+        <input type="checkbox" id="downloadPdfByDefault" checked>
+        <span data-i18n="optDownloadPdfDefault">Download PDF by default</span>
+      </label>
+    </div>
+
     <div class="field">
       <label><span data-i18n="optFilenameTitle">File Naming Rule</span> <span class="hint-inline" data-i18n="optFilenameHint">(Variables: {{safe_title}}, {{first_author}}, {{year}})</span></label>
       <input type="text" id="filenameRule" class="input-reset" placeholder="{{safe_title}}">

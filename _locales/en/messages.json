@@ -29,6 +29,9 @@
   "extPdfFailed": {
     "message": "Markdown saved, but PDF download failed."
   },
+  "extPdfDisabled": {
+    "message": "Markdown saved without downloading the PDF."
+  },
   "extTimelineHint": {
     "message": "Timeline: $1 -> $2 ($3)"
   },
@@ -44,11 +47,26 @@
   "extVenue": {
     "message": "Venue"
   },
+  "extPublication": {
+    "message": "Publication"
+  },
+  "extPublished": {
+    "message": "Published"
+  },
+  "extPreprint": {
+    "message": "Preprint"
+  },
   "extTags": {
     "message": "Tags"
   },
   "extTagPlaceholder": {
     "message": "Type tag and press Enter..."
+  },
+  "extNote": {
+    "message": "Note"
+  },
+  "extNotePlaceholder": {
+    "message": "Add your reading note..."
   },
   "extAbstract": {
     "message": "Abstract"
@@ -56,8 +74,17 @@
   "extAppendTags": {
     "message": "Append #tags at bottom"
   },
+  "extDownloadPdf": {
+    "message": "Download PDF"
+  },
+  "extPdfNotSaved": {
+    "message": "PDF will not be saved"
+  },
   "extSavePath": {
     "message": "Save Path"
+  },
+  "extInvalidSavePath": {
+    "message": "Save directory must be a relative path inside the browser download directory."
   },
   "extSaveClose": {
     "message": "Save & Close"
@@ -77,6 +104,9 @@
   "notifyPdfFailed": {
     "message": "PDF download failed."
   },
+  "notifyPdfDisabled": {
+    "message": "PDF not downloaded."
+  },
   "optTitle": {
     "message": "Settings"
   },
@@ -84,7 +114,13 @@
     "message": "Save Directory"
   },
   "optSavePathHint": {
-    "message": "Subfolder relative to the browser download directory"
+    "message": "Relative subfolder inside the browser download directory"
+  },
+  "optDownloadPdfDefault": {
+    "message": "Download PDF by default"
+  },
+  "optInvalidSavePath": {
+    "message": "Save directory must be a relative path inside the browser download directory."
   },
   "optDefaultTagsTitle": {
     "message": "Default Tags"
@@ -114,7 +150,7 @@
     "message": "Markdown Template"
   },
   "optTemplateHint": {
-    "message": "Variables: title, authors, authors_wikilinks, year, venue, preprint_year, preprint_venue, published_year, published_venue, tags, arxiv_id, doi, pdf_url, web_url, abstract, safe_title, citation_count, bibtex."
+    "message": "Variables: title, authors, authors_wikilinks, year, venue, latest_year, latest_venue, preprint_year, preprint_venue, published_year, published_venue, publication_status, publication_timeline, tags, arxiv_id, doi, pdf_url, pdf_filename, pdf_link, web_url, abstract, safe_title, citation_count, note, bibtex."
   },
   "optTemplateReset": {
     "message": "Reset to Default"

@@ -18,11 +18,13 @@
     "*://www.semanticscholar.org/paper/*",
     "*://aclanthology.org/*",
     "*://ieeexplore.ieee.org/document/*",
+    "*://dl.acm.org/doi/*",
     "*://link.springer.com/article/*",
     "*://link.springer.com/chapter/*",
     "*://www.nature.com/articles/*",
     "*://www.science.org/doi/*",
-    "*://api.semanticscholar.org/*"
+    "*://api.semanticscholar.org/*",
+    "https://api.crossref.org/*"
   ],
   "content_scripts": [
     {
@@ -32,6 +34,7 @@
         "*://www.semanticscholar.org/paper/*",
         "*://aclanthology.org/*",
         "*://ieeexplore.ieee.org/document/*",
+        "*://dl.acm.org/doi/*",
         "*://link.springer.com/article/*",
         "*://link.springer.com/chapter/*",
         "*://www.nature.com/articles/*",
