@@ -11,6 +11,16 @@
 .reading-source-actions, .reading-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
 .reading-source-actions .btn { width: auto; flex: 1 1 90px; padding: 7px 8px; font-size: 12px; }
 .reading-actions .btn { width: auto; flex: 1; padding: 8px 12px; }
+.reading-journal { border: 1px solid var(--border-color); border-radius: 4px; padding: 9px; }
+.reading-entry-list { list-style: none; }
+.reading-entry-list li { padding: 8px 0; border-top: 1px solid var(--border-color); overflow-wrap: anywhere; }
+.reading-entry-list button { max-width: 100%; text-align: start; }
+.reading-page-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.reading-page-controls input { width: 75px; }
+.reading-page-controls .btn { width: auto; padding: 6px 10px; }
+#readerPageView { margin-top: 8px; }
+#readerPageCanvas { display: block; width: 100%; height: auto; background: #fff; border: 1px solid var(--border-color); }
+.reading-source .reading-link { margin-inline-end: 8px; }
 .reading-assistant label { display: block; margin: 12px 0 6px; font-size: 12px; color: var(--reading-muted); text-transform: none; letter-spacing: normal; }
 .reading-select { width: 100%; min-height: 36px; padding: 6px 8px; color: var(--text-main); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; font: inherit; }
 .reading-question { min-height: 62px; }

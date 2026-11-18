@@ -26,6 +26,26 @@ Full-text questions require loaded text and use a bounded selection of passages,
 matches for Chinese and English queries. The source preview shows what will be sent.
 Examples, additional derivations, and research applications are labeled as background or proposals.
 
+### Focus and continue reading
+
+After loading HTML, choose a section or table. The preview prioritizes that location and includes
+nearby passages when available. If you supplied an excerpt, turn off excerpt-only analysis to
+include the selected section alongside it. HTML tables keep their captions, headers, rows and
+available notes as evidence with links back to the original.
+
+Choose **Use paper PDF** after loading HTML to switch to the linked PDF, or import a local file.
+Enter a page number and choose **View and focus**. A citation from
+that PDF also offers a page preview while the PDF is loaded. The preview is rendered locally,
+including for pages outside the initial text scan. Analysis sends extracted text, so a scanned
+page can be inspected visually and analyzed only after you provide text.
+
+Use **Ask a follow-up** to ask about the same evidence. The previous question and a bounded
+portion of its answer accompany the selected evidence. **End follow-up** returns to the regular
+source selection. Use **Keep in reading record** to retain useful answers and their citations,
+and **Save annotations** to retain your own notes. Open **Reading record** after returning to the
+same paper version to see saved answers and continue. Each paper version can hold up to 20 saved
+answers. Select saved answers and annotations for a single Markdown export.
+
 ## Sources and evidence
 
 - Start with the extracted abstract, load paper text, import a PDF, or supply a passage/formula.
@@ -45,7 +65,8 @@ Examples, additional derivations, and research applications are labeled as backg
 - Every output separates paper evidence, background explanation, proposals to validate,
   and information not established by the supplied text.
 
-PDFs are limited to 25 MB and 120 pages; loaded documents to 240,000 characters;
+PDFs are limited to 25 MB. The initial PDF text scan covers up to 120 pages. You can preview
+or focus on any individual page within the loaded file. Loaded documents are limited to 240,000 characters;
 each analysis to 24,000 source characters. Omitted/truncated content is indicated in the UI.
 PDF extraction may lose formula symbols, figures, table structure or column order. There is
 no built-in OCR or figure understanding. Use HTML, a supplied LaTeX formula, or recognized
@@ -65,6 +86,10 @@ and publisher/CDN hosts; they are not all granted on installation.
 
 Nothing is sent to the model until Analyze is clicked. Requests send selected source text,
 paper title/authors/year/URL and the optional question; not the entire PDF file or vault.
+An explicit follow-up includes the previous question and answer excerpt. Personal annotations
+and unselected reading records remain in the browser. Saved records are stored separately from
+the analysis cache, with only cited excerpts retained for each saved answer. Reload the PDF
+to reopen page previews for previously saved citations.
 Keys remain in local browser extension storage, are not encrypted by this extension, and are
 not included in cache keys or saved Markdown. Model requests omit browser cookies and reject redirects.
 
@@ -101,6 +126,7 @@ and locale layout are retained. New code is isolated in `reading/`:
 - `extract.js`: shared DOM and selection extraction; preserves available TeX.
 - `document.js`: HTML/PDF loading and local PDF text extraction.
 - `model.js`: provider-neutral Chat Completions client and reading prompts.
+- `journal.js`: transactional local storage for paper-version reading records and annotations.
 - `ui.js`, `reading.css`, `settings.js`: optional side-panel reading and model configuration.
 
 Long model requests run in the visible extension page, not in the download service worker.

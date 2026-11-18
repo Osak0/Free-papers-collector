@@ -66,6 +66,7 @@ async function main() {
         return route.fulfill({ json: { venue: 'Enriched Journal', year: 2026 }, headers: { 'Access-Control-Allow-Origin': '*' } });
       }
       if (url.includes('/html/')) return route.fulfill({ contentType: 'text/html', body: fixtureHtml, headers: { 'Access-Control-Allow-Origin': '*' } });
+      if (url.includes('/pdf/')) return route.fulfill({ contentType: 'application/pdf', body: samplePdf(), headers: { 'Access-Control-Allow-Origin': '*' } });
       return route.abort();
     });
     await context.addInitScript(({ paper, base }) => {
@@ -140,6 +141,11 @@ async function main() {
     await page.locator('#readerInclude').uncheck();
     assert.equal(await page.evaluate(() => PaperReadingUI.getExport()), '');
     await page.locator('#readerInclude').check();
+    await page.locator('#readerPin').click();
+    await page.waitForFunction(() => document.querySelector('#readerJournalStatus').textContent.includes('Added this answer'));
+    await page.locator('#readerJournalNotes').fill('My private annotation on the control.');
+    await page.locator('#readerSaveNotes').click();
+    await page.waitForFunction(() => document.querySelector('#readerJournalStatus').textContent.includes('saved locally'));
 
     await page.setViewportSize({ width: 320, height: 900 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
@@ -160,8 +166,26 @@ async function main() {
     await page.waitForFunction(() => document.querySelector('#readerStatus').textContent.startsWith('Request cancelled'));
     responseDelay = 0;
 
+    await page.locator('#readerExcerpt').fill('');
+    await page.locator('#readerSection').selectOption('table:Table 1: Stability');
+    await page.locator('#readerMode').selectOption('experiment');
+    await page.locator('#readerQuestion').fill('How does the table compare variance?');
+    await page.locator('#readerAnalyze').click();
+    await page.waitForFunction(() => document.querySelector('#readerStatus').textContent.includes('Analysis is ready'));
+    const tableRequest = JSON.parse(requests.at(-1).messages[1].content);
+    assert.equal(tableRequest.focus, 'Table 1: Stability');
+    assert.ok(tableRequest.passages.some(source => source.text.includes('Group | Variance') &&
+      source.text.includes('Treatment | 2.0') && source.text.includes('Lower is better')));
+    assert.ok(tableRequest.passages.some(source => source.text.includes('same measurements')));
+    assert.doesNotMatch(JSON.stringify(tableRequest), /My private annotation/);
+    await page.locator('#readerPin').click();
+    await page.waitForFunction(() => document.querySelectorAll('#readerJournalEntries input').length === 2);
+
+    await page.locator('#readerOnlinePdf').click();
+    await page.waitForFunction(() => document.querySelector('#readerStatus').textContent.includes('PDF text is ready'));
+    assert.equal(await page.locator('#readerPageNumber').getAttribute('max'), '1');
     await page.locator('#readerFile').setInputFiles({ name: 'example.pdf', mimeType: 'application/pdf', buffer: samplePdf() });
-    await page.waitForFunction(() => document.querySelector('#readerStatus').textContent.includes('PDF text is ready'), { timeout: 15000 });
+    await page.waitForFunction(() => document.querySelector('#readerStatus').textContent.includes('Imported: example.pdf'), undefined, { timeout: 15000 });
     await page.locator('#readerExcerpt').fill('');
     await page.waitForFunction(() => document.querySelector('#readerSources').textContent.includes('controlled study'));
     async function analyzeMode(mode) {
@@ -191,6 +215,15 @@ async function main() {
     const qa = await analyzeMode('qa');
     assert.ok(JSON.parse(qa.messages[1].content).passages.some(source => source.location.includes('PDF p. 1')));
     assert.match(await page.evaluate(() => PaperReadingUI.getExport()), /PDF p\. 1/);
+    await page.locator('.reading-citation').first().click();
+    await page.locator('#readerCitations').getByRole('button', { name: 'View PDF page 1' }).click();
+    await page.locator('#readerPageView').waitFor();
+    assert.ok(await page.locator('#readerPageCanvas').evaluate(canvas => canvas.width > 100));
+    await page.locator('#readerQuestion').fill('Which formula is on page one?');
+    const pageQa = await analyzeMode('qa');
+    const pdfRequest = JSON.parse(pageQa.messages[1].content);
+    assert.equal(pdfRequest.focus, 'PDF p. 1');
+    assert.ok(pdfRequest.passages.some(source => source.id.startsWith('P1')));
     await page.evaluate(() => { window.__tab = { id: 2, windowId: 1, url: 'https://example.org/other' }; chrome.tabs.onActivated.emit({ tabId: 2, windowId: 1 }); });
     assert.equal(await page.locator('#readerAnalyze').isDisabled(), true);
     assert.equal(await page.locator('#readerRefresh').isVisible(), true);
@@ -212,6 +245,50 @@ async function main() {
     await page.locator('#saveBtn').click();
     await page.waitForFunction(() => document.querySelector('#saveStatus').textContent.includes('PDF download is still in progress'));
     assert.equal(await page.locator('#saveBtn').textContent(), 'Close');
+
+    await page.close();
+    const resumed = await context.newPage();
+    await resumed.goto(`${base}/popup/popup.html`);
+    await resumed.locator('#form:not(.hidden)').waitFor();
+    await resumed.locator('#readerPanel > summary').click();
+    await resumed.locator('#readerJournal > summary').click();
+    await resumed.waitForFunction(() => document.querySelectorAll('#readerJournalEntries input').length === 2);
+    assert.equal(await resumed.locator('#readerJournalNotes').inputValue(), 'My private annotation on the control.');
+    for (const entry of await resumed.locator('#readerJournalEntries input').all()) await entry.check();
+    await resumed.locator('#readerIncludeNotes').check();
+    const merged = await resumed.evaluate(() => PaperReadingUI.getExport());
+    assert.equal((merged.match(/^### Analysis$/gm) || []).length, 2);
+    assert.match(merged, /My private annotation/);
+    await resumed.getByRole('button', { name: 'How does the table compare variance?' }).click();
+    await resumed.locator('#readerFollow').click();
+    await resumed.locator('#readerQuestion').fill('Does the caption define the comparison?');
+    await resumed.locator('#readerAnalyze').click();
+    await resumed.waitForFunction(() => document.querySelector('#readerStatus').textContent.includes('Analysis is ready'));
+    const follow = JSON.parse(requests.at(-1).messages[1].content);
+    assert.equal(follow.previous.question, 'How does the table compare variance?');
+    assert.ok(follow.passages.some(source => source.text.includes('Treatment | 2.0')));
+    assert.doesNotMatch(JSON.stringify(follow), /My private annotation/);
+
+    if (process.env.PAPER_FIXTURE_DIR) {
+      const fixtureDir = process.env.PAPER_FIXTURE_DIR;
+      const html = fs.readFileSync(path.join(fixtureDir, 'mevis.html'), 'utf8');
+      const htmlStats = await resumed.evaluate(html => {
+        const parsed = new DOMParser().parseFromString(html, 'text/html');
+        const { records } = PaperReadingExtractor.extractDocument(parsed, 'https://arxiv.org/html/2512.10945');
+        return { table: records.some(item => item.format === 'table' && /Table (?:\d+|[IVXLCDM]+)\s*:/i.test(item.locator) && item.text.includes('Row ')),
+          math: records.some(item => /\$[^$]+\$/.test(item.text)), sections: new Set(records.map(item => item.section)).size };
+      }, html);
+      assert.ok(htmlStats.table && htmlStats.math && htmlStats.sections > 3, JSON.stringify(htmlStats));
+      const pdf = path.join(fixtureDir, 'microwave-lensing.pdf');
+      await resumed.locator('#readerFile').setInputFiles(pdf);
+      await resumed.waitForFunction(() => document.querySelector('#readerStatus').textContent.includes('PDF text is ready'), undefined, { timeout: 20000 });
+      await resumed.locator('#readerPageNumber').fill('2');
+      await resumed.locator('#readerOpenPage').click();
+      await resumed.locator('#readerPageView').waitFor();
+      assert.match(await resumed.locator('#readerPageCaption').textContent(), /PDF page 2 of/);
+      assert.ok(await resumed.locator('#readerPageCanvas').evaluate(canvas => canvas.width > 100));
+      console.log('Verified published computer-vision HTML tables and astrophysics PDF page rendering.');
+    }
 
     const settings = await context.newPage();
     await settings.goto(`${base}/options/options.html`);

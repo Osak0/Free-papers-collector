@@ -3,7 +3,8 @@
   const R = root.PaperReading;
   const $ = id => document.getElementById(id);
   const t = (key, substitutions) => chrome.i18n.getMessage(key, substitutions) || key;
-  const controls = ['readerLoad', 'readerSelection', 'readerImport', 'readerMode', 'readerTopic', 'readerQuestion', 'readerExcerpt', 'readerExcerptOnly', 'readerAnalyze'];
+  const controls = ['readerLoad', 'readerSelection', 'readerImport', 'readerMode', 'readerTopic', 'readerQuestion', 'readerExcerpt', 'readerExcerptOnly',
+    'readerAnalyze', 'readerOnlinePdf', 'readerSection', 'readerPageNumber', 'readerOpenPage', 'readerClearPage', 'readerClearFollow', 'readerPin', 'readerFollow'];
   let current;
   let sourceDocument = { sources: [], scope: 'abstract' };
   let abstractDocument = sourceDocument;
@@ -14,6 +15,11 @@
   let selectedExcerpt;
   let previewTimer;
   let analyzing = false;
+  let focusedPage;
+  let followReport;
+  let journal = { notes: '', entries: [] };
+  let journalBusy = false;
+  const chosenEntries = new Set();
 
   function status(message, error = false) {
     $('readerStatus').textContent = message;
@@ -22,16 +28,21 @@
 
   function busy(value) {
     for (const id of controls) $(id).disabled = value || stale;
+    if (followReport) {
+      for (const id of ['readerMode', 'readerExcerpt', 'readerExcerptOnly']) $(id).disabled = true;
+    }
+    $('readerFollow').disabled ||= !report?.context.sources.length;
     $('readerCancel').hidden = !value;
     $('readerPanel').setAttribute('aria-busy', String(value));
   }
 
   function context() {
+    if (followReport) return followReport.context;
     const mode = $('readerMode').value;
     const useAbstract = ['screen', 'quick'].includes(mode) && abstractDocument.sources.length > 0;
     const excerpt = useAbstract ? '' : $('readerExcerpt').value;
-    const excerptOnly = mode === 'explain' || (mode !== 'qa' && $('readerExcerptOnly').checked && excerpt.trim());
-    const source = useAbstract ? abstractDocument : sourceDocument;
+    const excerptOnly = mode !== 'qa' && $('readerExcerptOnly').checked && excerpt.trim();
+    const source = useAbstract ? abstractDocument : focusedDocument();
     const query = mode === 'screen' ? $('readerTopic').value : $('readerQuestion').value;
     const selected = R.selectContext(excerptOnly ? { sources: [], scope: 'provided' } : source, mode, query, excerpt);
     selected.truncated = !excerptOnly && Boolean(source.truncated);
@@ -41,6 +52,71 @@
       if (excerptOnly) selected.scope = 'selection';
     }
     return selected;
+  }
+
+  function focusedDocument() {
+    if (!focusedPage) {
+      const selection = $('readerSection').value;
+      if (!selection) return sourceDocument;
+      return R.focusSources(sourceDocument, selection.startsWith('table:') ? { table: selection.slice(6) } : { section: selection.slice(8) });
+    }
+    const page = focusedPage.number;
+    const near = sourceDocument.sources.filter(source => source.page === page - 1 || source.page === page + 1);
+    const sources = [...focusedPage.sources, ...near];
+    return { ...sourceDocument, sources, focus: `PDF p. ${page}`,
+      focusOmitted: sourceDocument.sources.filter(source => Math.abs(source.page - page) > 1).length,
+      priority: new Set(focusedPage.sources.map(source => source.id)) };
+  }
+
+  function useDocument(document) {
+    sourceDocument = document;
+    clearPage();
+    const pdf = document.pdfDocument;
+    $('readerPageControl').hidden = !pdf;
+    $('readerOnlinePdf').hidden = Boolean(pdf) || document.scope === 'abstract' || !R.safeSourceUrl(current.paper.pdf_url);
+    $('readerPageNumber').value = '';
+    $('readerPageNumber').max = pdf?.pageCount || '';
+    const sections = pdf || document.scope === 'abstract' ? [] : [...new Set(document.sources.map(source => source.section).filter(Boolean))];
+    const tables = [...new Set(document.sources.filter(source => source.format === 'table').map(source => source.locator).filter(Boolean))];
+    const select = $('readerSection');
+    select.replaceChildren(new Option(t('readerAllSections'), ''), ...sections.map(section => new Option(section, `section:${section}`)),
+      ...tables.map(table => new Option(`▦ ${table}`, `table:${table}`)));
+    $('readerSectionControl').hidden = !sections.length && !tables.length;
+    $('readerEvidence').hidden = !pdf && !sections.length && !tables.length;
+    renderSources();
+  }
+
+  function clearPage() {
+    focusedPage = null;
+    $('readerPageView').hidden = true;
+    $('readerClearPage').hidden = true;
+    $('readerPageCanvas').width = 0;
+  }
+
+  function viewPage(number) {
+    void run(async (signal, token) => {
+      await boundTab();
+      const pdf = sourceDocument.pdfDocument;
+      if (!pdf) throw new Error('readerPageInvalid');
+      status(t('readerLoading'));
+      const canvas = document.createElement('canvas');
+      const sources = await root.PaperReadingDocument.readPdfPage(pdf, number, canvas, signal);
+      if (generation !== token || signal.aborted) return;
+      endFollow();
+      focusedPage = { number, sources };
+      $('readerPageNumber').value = String(number);
+      $('readerPageCanvas').replaceWith(canvas);
+      canvas.id = 'readerPageCanvas';
+      canvas.setAttribute('role', 'img');
+      const caption = t('readerPagePreview', [String(number), String(pdf.pageCount)]);
+      canvas.setAttribute('aria-label', caption);
+      $('readerPageCaption').textContent = caption;
+      $('readerPageView').hidden = false;
+      $('readerClearPage').hidden = false;
+      if (['quick', 'screen'].includes($('readerMode').value)) $('readerMode').value = 'qa';
+      updateMode();
+      status(t(sources.length ? 'readerPageFocused' : 'readerPdfNoText'));
+    });
   }
 
   function updateMode() {
@@ -57,7 +133,7 @@
   }
 
   function renderSources(selected = context()) {
-    $('readerSourceSummary').textContent = t('readerContextSummary', [scopeLabel(selected.scope.split('+')[0]), String(selected.sources.length), String(selected.characters)]);
+    $('readerSourceSummary').textContent = t('readerContextSummary', [selected.focus || scopeLabel(selected.scope.split('+')[0]), String(selected.sources.length), String(selected.characters)]);
     $('readerCoverage').textContent = selected.omitted || selected.truncated ? t('readerPartialContext') : '';
     if ($('readerSourceDetails').open) buildSources($('readerSources'), selected.sources, 'preview');
   }
@@ -70,10 +146,20 @@
       block.id = `reader-${prefix}-${source.id}`;
       block.tabIndex = -1;
       const label = document.createElement('strong');
-      label.textContent = `[${source.id}] ${source.section || source.locator || t('readerScopeProvided')}`;
+      label.textContent = `[${source.id}] ${source.locator || source.section || t('readerScopeProvided')}`;
       const text = document.createElement('blockquote');
       text.textContent = source.text;
       block.append(label, text);
+      if (source.page && source.pdfId && source.pdfId === sourceDocument.pdfDocument?.id) {
+        const view = document.createElement('button');
+        view.type = 'button';
+        view.className = 'reading-link';
+        view.textContent = t('readerViewPdfPage', [String(source.page)]);
+        view.onclick = () => {
+          if (source.pdfId === sourceDocument.pdfDocument?.id) viewPage(source.page);
+        };
+        block.append(view);
+      }
       const safeUrl = R.safeSourceUrl(source.url);
       if (safeUrl) {
         const link = document.createElement('a');
@@ -96,7 +182,7 @@
     result.replaceChildren();
     const meta = document.createElement('p');
     meta.className = 'reading-meta';
-    meta.textContent = `${t('readerMode' + value.mode[0].toUpperCase() + value.mode.slice(1))} · ${value.model} · ${scopeLabel(value.context.scope.split('+')[0])} · ${new Date(value.createdAt).toLocaleString()}`;
+    meta.textContent = `${t('readerMode' + value.mode[0].toUpperCase() + value.mode.slice(1))} · ${value.model} · ${value.context.focus || scopeLabel(value.context.scope.split('+')[0])} · ${new Date(value.createdAt).toLocaleString()}`;
     const summary = document.createElement('p');
     summary.textContent = value.analysis.summary;
     result.append(meta, summary);
@@ -141,10 +227,99 @@
       result.append(heading, list);
     }
     $('readerExportField').hidden = false;
-    $('readerInclude').checked = true;
+    $('readerInclude').checked = !chosenEntries.has(value.id);
+    $('readerResultActions').hidden = false;
+    $('readerFollow').disabled = stale || !value.context.sources.length;
     $('readerResultNotice').hidden = false;
     if (root.renderMathInElement) root.renderMathInElement(result, { throwOnError: false, trust: false, strict: 'ignore',
       delimiters: [{ left: '$$', right: '$$', display: true }, { left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }, { left: '$', right: '$', display: false }] });
+  }
+
+  function endFollow() {
+    followReport = null;
+    $('readerQuestionContext').hidden = true;
+    $('readerClearFollow').hidden = true;
+    $('readerExcerpt').disabled = Boolean(operation) || stale;
+    $('readerExcerptOnly').disabled = Boolean(operation) || stale;
+    $('readerMode').disabled = Boolean(operation) || stale;
+  }
+
+  function startFollow(value) {
+    if (stale || operation || !value?.context.sources.length) return;
+    followReport = value;
+    $('readerMode').value = 'qa';
+    $('readerQuestion').value = '';
+    $('readerQuestionContext').textContent = t('readerFollowingEvidence', [(value.question || value.analysis.summary).slice(0, 160)]);
+    $('readerQuestionContext').hidden = false;
+    $('readerClearFollow').hidden = false;
+    updateMode();
+    busy(false);
+    $('readerQuestion').focus();
+  }
+
+  function renderJournal() {
+    const list = $('readerJournalEntries');
+    const fragment = document.createDocumentFragment();
+    for (const entry of journal.entries) {
+      const item = document.createElement('li');
+      const title = document.createElement('button');
+      title.type = 'button';
+      title.className = 'reading-link';
+      title.textContent = (entry.question || entry.analysis.summary || entry.mode).slice(0, 170);
+      title.onclick = () => {
+        if (operation || stale) return;
+        endFollow();
+        renderReport(entry);
+        renderSources();
+        $('readerResults').scrollIntoView({ block: 'nearest' });
+      };
+      const label = document.createElement('label');
+      label.className = 'reading-export';
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      check.checked = chosenEntries.has(entry.id);
+      check.onchange = () => {
+        if (check.checked) chosenEntries.add(entry.id);
+        else chosenEntries.delete(entry.id);
+      };
+      label.append(check, document.createTextNode(t('readerIncludeEntry')));
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'reading-link';
+      remove.textContent = t('readerRemoveEntry');
+      remove.onclick = () => void updateJournal(key => root.PaperReadingJournal.remove(key, entry.id), 'readerEntryRemoved');
+      item.append(title, label, remove);
+      fragment.append(item);
+    }
+    if (!journal.entries.length) {
+      const empty = document.createElement('li');
+      empty.className = 'reading-hint';
+      empty.textContent = t('readerJournalEmpty');
+      fragment.append(empty);
+    }
+    list.replaceChildren(fragment);
+  }
+
+  async function updateJournal(action, success) {
+    if (!current || stale || journalBusy) return;
+    const key = current.key;
+    journalBusy = true;
+    try {
+      const updated = await action(key);
+      if (current?.key !== key) return;
+      journal = updated;
+      for (const id of chosenEntries) {
+        if (!journal.entries.some(entry => entry.id === id)) chosenEntries.delete(id);
+      }
+      renderJournal();
+      $('readerJournal').open = true;
+      $('readerJournalStatus').textContent = t(success);
+    } catch (error) {
+      $('readerJournal').open = true;
+      $('readerJournalStatus').textContent = t(error?.message === 'readerJournalFull' ? 'readerJournalFull' : 'readerJournalFailed');
+    } finally {
+      journalBusy = false;
+    }
   }
 
   function renderScreening(result, value) {
@@ -233,7 +408,15 @@
     current = { ...detail, key: R.paperKey(detail.paper) };
     stale = false;
     report = null;
+    endFollow();
     selectedExcerpt = null;
+    journal = { notes: '', entries: [] };
+    chosenEntries.clear();
+    $('readerJournalNotes').value = '';
+    $('readerIncludeNotes').checked = false;
+    $('readerJournalStatus').textContent = '';
+    $('readerSaveNotes').disabled = true;
+    renderJournal();
     $('readerResults').replaceChildren();
     $('readerExcerpt').value = '';
     $('readerQuestion').value = '';
@@ -241,33 +424,49 @@
     $('readerCitations').hidden = true;
     $('readerExportField').hidden = true;
     $('readerResultNotice').hidden = true;
-    sourceDocument = abstractDocument = { ...R.makeSources(detail.paper.abstract ? [{ text: detail.paper.abstract, section: t('extAbstract'), url: detail.paper.web_url, kind: 'paper' }] : []), scope: 'abstract' };
+    $('readerResultActions').hidden = true;
+    abstractDocument = { ...R.makeSources(detail.paper.abstract ? [{ text: detail.paper.abstract, section: t('extAbstract'), url: detail.paper.web_url, kind: 'paper' }] : []), scope: 'abstract' };
+    useDocument(abstractDocument);
     busy(false);
     updateMode();
     status(t('readerReady'));
     const token = generation;
+    const key = current.key;
+    void root.PaperReadingJournal.load(key).then(value => {
+      if (current?.key !== key || journalBusy) return;
+      journal = value;
+      if (!$('readerJournalNotes').value) $('readerJournalNotes').value = value.notes;
+      renderJournal();
+    }).catch(() => { $('readerJournalStatus').textContent = t('readerJournalFailed'); })
+      .finally(() => { if (current?.key === key) $('readerSaveNotes').disabled = false; });
     const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (generation === token && !matchesPaper(active)) markStale();
   }
 
-  $('readerLoad').addEventListener('click', () => {
+  function loadDocument(pdfOnly) {
     if (!current || stale || operation) return;
     // Request directly in the click gesture, before reading storage or parsing files.
-    const origins = [...new Set([current.paper.html_url, current.paper.pdf_url].map(R.safeSourceUrl)
+    const pdfUrl = R.safeSourceUrl(current.paper.pdf_url);
+    if (pdfOnly && !pdfUrl) return;
+    const origins = [...new Set([pdfOnly ? '' : current.paper.html_url, pdfUrl].map(R.safeSourceUrl)
       .filter(Boolean).map(url => `${new URL(url).origin}/*`))];
     const permission = origins.length ? chrome.permissions.request({ origins }) : Promise.resolve(true);
     void run(async (signal, token) => {
       if (!await permission) throw new Error('readerPermissionNeeded');
       await boundTab();
       status(t('readerLoading'));
-      const loaded = await root.PaperReadingDocument.loadPaper(current.paper, current.tabId, signal,
-        (page, count) => { if (generation === token) status(t('readerPdfProgress', [String(page), String(count)])); });
+      const progress = (page, count) => { if (generation === token) status(t('readerPdfProgress', [String(page), String(count)])); };
+      const loaded = pdfOnly
+        ? await root.PaperReadingDocument.loadPdf(pdfUrl, signal, progress)
+        : await root.PaperReadingDocument.loadPaper(current.paper, current.tabId, signal, progress);
       if (generation !== token || signal.aborted) return;
-      sourceDocument = loaded;
-      renderSources();
-      status(t(loaded.scope === 'pdf-text' ? 'readerPdfReady' : 'readerTextReady'));
+      endFollow();
+      useDocument(loaded);
+      status(t(loaded.scope === 'pdf-text' ? (loaded.sources.length ? 'readerPdfReady' : 'readerPdfNoText') : 'readerTextReady'));
     });
-  });
+  }
+  $('readerLoad').addEventListener('click', () => loadDocument(false));
+  $('readerOnlinePdf').addEventListener('click', () => loadDocument(true));
 
   $('readerSelection').addEventListener('click', () => void run(async (signal, token) => {
     await boundTab();
@@ -275,6 +474,7 @@
     if (!extracted?.text) throw new Error('readerNoSelection');
     if (generation !== token || signal.aborted) return;
     $('readerExcerpt').value = extracted.text;
+    endFollow();
     selectedExcerpt = extracted;
     if (['screen', 'quick'].includes($('readerMode').value)) {
       $('readerMode').value = 'explain';
@@ -292,12 +492,11 @@
       if (file.size > 25 * 1024 * 1024) throw new Error('readerFileTooLarge');
       status(t('readerLoading'));
       const loaded = await root.PaperReadingDocument.readPdf(new Uint8Array(await file.arrayBuffer()), '', signal,
-        (page, count) => { if (generation === token) status(t('readerPdfProgress', [String(page), String(count)])); });
+        (page, count) => { if (generation === token) status(t('readerPdfProgress', [String(page), String(count)])); }, file.name);
       if (generation !== token || signal.aborted) return;
-      sourceDocument = { ...loaded, scope: 'pdf-text', sources: loaded.sources.map(source => ({ ...source,
-        section: `${file.name.slice(0, 120)} · ${source.section}`, locator: `${file.name.slice(0, 120)} · ${source.locator}` })) };
-      renderSources();
-      status(`${t('readerPdfReady')} ${t('readerImportedFile', [file.name])}`);
+      endFollow();
+      useDocument(loaded);
+      status(`${t(loaded.sources.length ? 'readerPdfReady' : 'readerPdfNoText')} ${t('readerImportedFile', [file.name])}`);
     }).finally(() => { $('readerFile').value = ''; });
   });
 
@@ -308,7 +507,7 @@
     const topic = mode === 'screen' ? $('readerTopic').value.trim() : '';
     if (mode === 'screen' && !topic) throw new Error('readerTopicRequired');
     if (mode === 'explain' && !$('readerExcerpt').value.trim()) throw new Error('readerExcerptRequired');
-    if (mode === 'qa' && (!sourceDocument.sources.length || !['html-text', 'pdf-text', 'page'].includes(sourceDocument.scope))) {
+    if (mode === 'qa' && !followReport && !focusedPage && (!sourceDocument.sources.length || !['html-text', 'pdf-text', 'page'].includes(sourceDocument.scope))) {
       throw new Error('readerFullTextRequired');
     }
     if (mode === 'qa' && !question) throw new Error('readerQuestionRequired');
@@ -320,7 +519,11 @@
     renderSources(selected);
     if (!selected.sources.length) throw new Error('readerNoText');
     const language = mode === 'quick' ? 'zh_CN' : config.language === 'auto' ? (chrome.i18n.getUILanguage().startsWith('zh') ? 'zh_CN' : 'en') : config.language;
-    const key = await R.fingerprint({ paper: current.key, context: selected, mode, question, topic, language, endpoint: config.endpoint, model: config.model, promptVersion: 2 });
+    const previous = followReport ? {
+      question: (followReport.question || '').slice(0, 800),
+      answer: [followReport.analysis.summary, ...followReport.analysis.sections.map(section => section.text)].join('\n').slice(0, 2500)
+    } : null;
+    const key = await R.fingerprint({ paper: current.key, context: selected, mode, question, topic, previous, language, endpoint: config.endpoint, model: config.model, promptVersion: 3 });
     const cached = (await chrome.storage.local.get('readingCache').catch(() => ({}))).readingCache || {};
     if (generation !== token || signal.aborted) return;
     if (cached[key]) { renderReport(cached[key]); status(t('readerCached')); return; }
@@ -328,9 +531,9 @@
     status(t('readerAnalyzing'));
     const paper = current.paper;
     const paperIdentity = current.key;
-    const analysis = await root.PaperReadingModel.analyze({ config, paper, context: selected, mode, question, language, topic, signal });
+    const analysis = await root.PaperReadingModel.analyze({ config, paper, context: selected, mode, question, language, topic, previous, signal });
     if (generation !== token || signal.aborted) return;
-    const value = { analysis, context: selected, mode, question, topic, model: config.model, paperKey: paperIdentity, createdAt: new Date().toISOString() };
+    const value = { id: key, analysis, context: selected, mode, question, topic, model: config.model, paperKey: paperIdentity, createdAt: new Date().toISOString() };
     renderReport(value);
     status(t('readerDone'));
     // Keep only ten completed analyses; never cache credentials or entire PDFs.
@@ -349,6 +552,27 @@
   });
   $('readerSettings').addEventListener('click', () => chrome.runtime.openOptionsPage());
   $('readerMode').addEventListener('change', updateMode);
+  $('readerSection').addEventListener('change', () => {
+    endFollow();
+    if ($('readerSection').value && ['quick', 'screen'].includes($('readerMode').value)) $('readerMode').value = 'qa';
+    updateMode();
+  });
+  $('readerOpenPage').addEventListener('click', () => viewPage($('readerPageNumber').valueAsNumber));
+  $('readerPageNumber').addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); viewPage(event.currentTarget.valueAsNumber); }
+  });
+  $('readerClearPage').addEventListener('click', () => { clearPage(); endFollow(); renderSources(); });
+  $('readerFollow').addEventListener('click', () => startFollow(report));
+  $('readerClearFollow').addEventListener('click', () => { endFollow(); renderSources(); });
+  $('readerPin').addEventListener('click', () => {
+    if (!report || operation) return;
+    const value = structuredClone(report);
+    void updateJournal(key => root.PaperReadingJournal.pin(key, value), 'readerEntrySaved');
+  });
+  $('readerSaveNotes').addEventListener('click', () => {
+    const notes = $('readerJournalNotes').value;
+    void updateJournal(key => root.PaperReadingJournal.saveNotes(key, notes), 'readerNotesSaved');
+  });
   for (const id of ['readerTopic', 'readerQuestion', 'readerExcerpt', 'readerExcerptOnly']) {
     $(id).addEventListener('input', () => {
       clearTimeout(previewTimer);
@@ -389,9 +613,24 @@
   });
   chrome.tabs.onRemoved?.addListener(id => { if (id === current?.tabId) markStale(); });
   addEventListener('pagehide', () => operation?.abort());
+  function getExport() {
+    if (stale || !current) return '';
+    const entries = new Map(journal.entries.filter(entry => chosenEntries.has(entry.id)).map(entry => [entry.id, entry]));
+    if (report?.paperKey === current.key && $('readerInclude').checked) entries.set(report.id, report);
+    const notes = $('readerIncludeNotes').checked ? $('readerJournalNotes').value.trim() : '';
+    if (!entries.size && !notes) return '';
+    const reports = [...entries.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    if (reports.length === 1 && !notes) return R.formatReport(reports[0]);
+    const parts = ['## Reading assistant'];
+    if (notes) parts.push(`### Personal annotations\n\n${R.noteText(notes)}`);
+    for (const entry of reports) parts.push(R.formatReport(entry, 3));
+    return parts.join('\n\n');
+  }
+
   root.PaperReadingUI = {
-    getExport: () => report && !stale && $('readerInclude').checked && report.paperKey === current?.key ? R.formatReport(report) : '',
-    hasWork: () => Boolean(report || operation || $('readerExcerpt').value || $('readerQuestion').value || $('readerTopic').value),
+    getExport,
+    hasWork: () => Boolean(report || operation || $('readerExcerpt').value || $('readerQuestion').value ||
+      $('readerTopic').value || $('readerJournalNotes').value !== journal.notes),
     isAnalyzing: () => analyzing,
     canSave: async () => { try { await boundTab(); return true; } catch { return false; } }
   };

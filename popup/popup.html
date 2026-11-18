@@ -64,11 +64,42 @@
         <div class="reading-body">
           <p class="reading-hint" data-i18n="readerIntro">Understand methods, formulas and experiments, then explore the knowledge and research steps behind them.</p>
           <button type="button" class="reading-link" id="readerSettings" data-i18n="readerSettings">AI settings</button>
+          <details id="readerJournal" class="reading-sources reading-journal">
+            <summary data-i18n="readerJournalTitle">Reading record</summary>
+            <p class="reading-hint" data-i18n="readerJournalHint"></p>
+            <label for="readerJournalNotes" data-i18n="readerJournalNotes">Personal annotations</label>
+            <textarea id="readerJournalNotes" class="note-input" maxlength="12000"></textarea>
+            <div class="reading-actions">
+              <button type="button" id="readerSaveNotes" class="btn btn-secondary" data-i18n="readerSaveNotes">Save annotations</button>
+              <label class="reading-export"><input type="checkbox" id="readerIncludeNotes"><span data-i18n="readerIncludeNotes">Export annotations</span></label>
+            </div>
+            <p id="readerJournalStatus" class="reading-status" role="status"></p>
+            <ul id="readerJournalEntries" class="reading-entry-list"></ul>
+          </details>
           <div class="reading-source-actions">
             <button type="button" id="readerLoad" class="btn btn-secondary" data-i18n="readerLoad">Load paper text</button>
             <button type="button" id="readerSelection" class="btn btn-secondary" data-i18n="readerSelection">Use selected text</button>
             <button type="button" id="readerImport" class="btn btn-secondary" data-i18n="readerImport">Import PDF</button>
             <input type="file" id="readerFile" accept="application/pdf,.pdf" hidden>
+          </div>
+          <button type="button" id="readerOnlinePdf" class="reading-link" data-i18n="readerOnlinePdf" hidden>Use paper PDF</button>
+          <div id="readerEvidence" hidden>
+            <div id="readerSectionControl" hidden>
+              <label for="readerSection" data-i18n="readerFocusSection">Focus on a section</label>
+              <select id="readerSection" class="reading-select"></select>
+            </div>
+            <div id="readerPageControl" hidden>
+              <label for="readerPageNumber" data-i18n="readerFocusPage">PDF page number</label>
+              <div class="reading-page-controls">
+                <input type="number" id="readerPageNumber" class="reading-select" min="1" step="1">
+                <button type="button" id="readerOpenPage" class="btn btn-secondary" data-i18n="readerViewPage">View and focus</button>
+                <button type="button" id="readerClearPage" class="reading-link" data-i18n="readerClearPage" hidden>Clear focus</button>
+              </div>
+              <figure id="readerPageView" hidden>
+                <figcaption id="readerPageCaption" class="reading-hint"></figcaption>
+                <canvas id="readerPageCanvas"></canvas>
+              </figure>
+            </div>
           </div>
           <label for="readerExcerpt" data-i18n="readerExcerpt">Passage or formula to explore (optional)</label>
           <textarea id="readerExcerpt" class="note-input" maxlength="12000" data-i18n-placeholder="readerExcerptHint" placeholder="Paste a passage or LaTeX formula, or use selected text."></textarea>
@@ -91,6 +122,8 @@
             <input id="readerTopic" class="reading-select" type="text" maxlength="500" data-i18n-placeholder="readerTopicHint">
           </div>
           <p id="readerModeHint" class="reading-hint" hidden></p>
+          <p id="readerQuestionContext" class="reading-hint" hidden></p>
+          <button type="button" id="readerClearFollow" class="reading-link" data-i18n="readerClearFollow" hidden>End follow-up</button>
           <label for="readerQuestion" data-i18n="readerQuestion">Your question (optional)</label>
           <textarea id="readerQuestion" class="note-input reading-question" maxlength="2000" data-i18n-placeholder="readerQuestionHint" placeholder="Which assumption makes this step valid?"></textarea>
           <details id="readerSourceDetails" class="reading-sources">
@@ -109,6 +142,10 @@
             <div id="readerCitedSources" class="reading-source-list"></div>
           </details>
           <div id="readerResults" class="reading-results" aria-live="polite"></div>
+          <div class="reading-actions" id="readerResultActions" hidden>
+            <button type="button" id="readerPin" class="btn btn-secondary" data-i18n="readerPin">Keep in reading record</button>
+            <button type="button" id="readerFollow" class="btn btn-secondary" data-i18n="readerFollow">Ask a follow-up</button>
+          </div>
           <p id="readerResultNotice" class="reading-hint" data-i18n="readerResultNotice" hidden>AI explanations may be incorrect. Check cited passages; proposed research steps require validation.</p>
           <label id="readerExportField" class="reading-export" hidden><input type="checkbox" id="readerInclude"><span data-i18n="readerInclude">Include this analysis in the saved note</span></label>
         </div>
@@ -171,6 +208,7 @@
   <script src="../reading/extract.js"></script>
   <script src="../reading/model.js"></script>
   <script src="../reading/document.js"></script>
+  <script src="../reading/journal.js"></script>
   <script src="../reading/ui.js"></script>
   <script src="popup.js"></script>
 </body>

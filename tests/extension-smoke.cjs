@@ -66,10 +66,14 @@ async function main() {
 
     const pdfText = await popup.evaluate(async bytes => {
       const doc = await PaperReadingDocument.readPdf(new Uint8Array(bytes), '', new AbortController().signal);
-      return { scope: doc.scope, text: doc.sources.map(source => source.text).join(' ') };
+      const canvas = document.createElement('canvas');
+      const pages = await PaperReadingDocument.readPdfPage(doc.pdfDocument, 1, canvas, new AbortController().signal);
+      return { scope: doc.scope, text: doc.sources.map(source => source.text).join(' '), page: pages[0].page, width: canvas.width };
     }, [...samplePdf()]);
     assert.equal(pdfText.scope, 'pdf-text');
     assert.match(pdfText.text, /controlled study/);
+    assert.equal(pdfText.page, 1);
+    assert.ok(pdfText.width > 100);
     assert.equal(await popup.evaluate(() => {
       const node = document.createElement('div'); node.textContent = '$x = y + z$'; document.body.append(node);
       renderMathInElement(node, { trust: false, delimiters: [{ left: '$', right: '$', display: false }] });

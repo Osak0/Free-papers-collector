@@ -499,5 +499,86 @@
   },
   "optMappingCategory": {
     "message": "论文分类"
+  },
+  "readerJournalTitle": {
+    "message": "阅读记录"
+  },
+  "readerJournalHint": {
+    "message": "收藏的回答和批注按论文版本保存在此浏览器，可勾选要随 Markdown 笔记导出的内容。"
+  },
+  "readerJournalNotes": {
+    "message": "个人批注"
+  },
+  "readerSaveNotes": {
+    "message": "保存批注"
+  },
+  "readerIncludeNotes": {
+    "message": "导出批注"
+  },
+  "readerIncludeEntry": {
+    "message": "随 Markdown 笔记导出"
+  },
+  "readerRemoveEntry": {
+    "message": "从记录中移除"
+  },
+  "readerJournalEmpty": {
+    "message": "收藏的回答会显示在这里。"
+  },
+  "readerEntrySaved": {
+    "message": "已将这条回答保存到阅读记录。"
+  },
+  "readerEntryRemoved": {
+    "message": "已从阅读记录移除这条回答。"
+  },
+  "readerNotesSaved": {
+    "message": "批注已保存到本地。"
+  },
+  "readerJournalFailed": {
+    "message": "无法访问本地阅读记录，仍可保存论文。"
+  },
+  "readerJournalFull": {
+    "message": "这篇论文已保存 20 条回答。请先移除一条再保存。"
+  },
+  "readerFocusSection": {
+    "message": "定位章节或表格"
+  },
+  "readerAllSections": {
+    "message": "自动选取原文片段"
+  },
+  "readerFocusPage": {
+    "message": "PDF 页码"
+  },
+  "readerViewPage": {
+    "message": "查看并定位"
+  },
+  "readerClearPage": {
+    "message": "清除定位"
+  },
+  "readerPageInvalid": {
+    "message": "请输入此 PDF 的有效页码。"
+  },
+  "readerPagePreview": {
+    "message": "PDF 第 $1 / $2 页"
+  },
+  "readerViewPdfPage": {
+    "message": "查看 PDF 第 $1 页"
+  },
+  "readerPageFocused": {
+    "message": "原文已打开。分析会优先使用本页文字，也可能参考相邻页。"
+  },
+  "readerFollowingEvidence": {
+    "message": "正在追问：$1。发送时会附上上一个问题、回答与原文片段。"
+  },
+  "readerClearFollow": {
+    "message": "结束追问"
+  },
+  "readerPin": {
+    "message": "收藏到阅读记录"
+  },
+  "readerFollow": {
+    "message": "继续追问"
+  },
+  "readerOnlinePdf": {
+    "message": "使用论文 PDF"
   }
 }
