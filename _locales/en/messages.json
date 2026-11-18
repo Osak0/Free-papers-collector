@@ -499,5 +499,86 @@
   },
   "optMappingCategory": {
     "message": "Paper category"
+  },
+  "readerJournalTitle": {
+    "message": "Reading record"
+  },
+  "readerJournalHint": {
+    "message": "Saved answers and annotations stay in this browser under this paper version. Choose what to include when saving the Markdown note."
+  },
+  "readerJournalNotes": {
+    "message": "Personal annotations"
+  },
+  "readerSaveNotes": {
+    "message": "Save annotations"
+  },
+  "readerIncludeNotes": {
+    "message": "Export annotations"
+  },
+  "readerIncludeEntry": {
+    "message": "Include in Markdown note"
+  },
+  "readerRemoveEntry": {
+    "message": "Remove from record"
+  },
+  "readerJournalEmpty": {
+    "message": "Saved answers will appear here."
+  },
+  "readerEntrySaved": {
+    "message": "Added this answer to your reading record."
+  },
+  "readerEntryRemoved": {
+    "message": "Removed this answer from your reading record."
+  },
+  "readerNotesSaved": {
+    "message": "Annotations saved locally."
+  },
+  "readerJournalFailed": {
+    "message": "Could not access the local reading record. Your paper can still be saved."
+  },
+  "readerJournalFull": {
+    "message": "This paper already has 20 saved answers. Remove one before saving another."
+  },
+  "readerFocusSection": {
+    "message": "Focus on a section or table"
+  },
+  "readerAllSections": {
+    "message": "Choose passages automatically"
+  },
+  "readerFocusPage": {
+    "message": "PDF page number"
+  },
+  "readerViewPage": {
+    "message": "View and focus"
+  },
+  "readerClearPage": {
+    "message": "Clear focus"
+  },
+  "readerPageInvalid": {
+    "message": "Enter a page number within this PDF."
+  },
+  "readerPagePreview": {
+    "message": "PDF page $1 of $2"
+  },
+  "readerViewPdfPage": {
+    "message": "View PDF page $1"
+  },
+  "readerPageFocused": {
+    "message": "Page ready. Analysis prioritizes text on this page and may use nearby pages."
+  },
+  "readerFollowingEvidence": {
+    "message": "Following up on: $1. The previous question and answer will be sent with the source passages."
+  },
+  "readerClearFollow": {
+    "message": "End follow-up"
+  },
+  "readerPin": {
+    "message": "Keep in reading record"
+  },
+  "readerFollow": {
+    "message": "Ask a follow-up"
+  },
+  "readerOnlinePdf": {
+    "message": "Use paper PDF"
   }
 }

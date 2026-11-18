@@ -36,17 +36,39 @@
     } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
   }
 
-  async function readPdf(bytes, url, signal, onProgress = () => {}) {
+  async function openPdf(bytes, signal, work) {
     if (bytes.byteLength > MAX_BYTES) throw new Error('readerFileTooLarge');
     pdfModule ||= await import(chrome.runtime.getURL('vendor/pdfjs/pdf.min.mjs'));
     pdfModule.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('vendor/pdfjs/pdf.worker.min.mjs');
-    const task = pdfModule.getDocument({ data: bytes, cMapUrl: chrome.runtime.getURL('vendor/pdfjs/cmaps/'),
+    const task = pdfModule.getDocument({ data: bytes.slice(), cMapUrl: chrome.runtime.getURL('vendor/pdfjs/cmaps/'),
       cMapPacked: true, isEvalSupported: false, useWasm: false, disableFontFace: true, useSystemFonts: true });
-    const abort = () => { void task.destroy(); };
+    const abort = () => { void task.destroy().catch(() => {}); };
     signal?.addEventListener('abort', abort, { once: true });
     try {
       if (signal?.aborted) throw new Error('readerCancelled');
-      const pdf = await task.promise;
+      return await work(await task.promise);
+    } catch (error) {
+      if (signal?.aborted) throw new Error('readerCancelled');
+      if (/^reader[A-Z]/.test(error.message)) throw error;
+      throw new Error('readerPdfFailed');
+    } finally {
+      signal?.removeEventListener('abort', abort);
+      await task.destroy().catch(() => {});
+    }
+  }
+
+  async function pageRecord(page, document) {
+    const content = await page.getTextContent();
+    const text = content.items.map(item => typeof item.str === 'string' ? item.str + (item.hasEOL ? '\n' : ' ') : '').join('').trim();
+    const { pageNumber } = page;
+    const locator = [document.name, `PDF p. ${pageNumber}`].filter(Boolean).join(' · ');
+    return { text, locator, section: locator, page: pageNumber, pdfId: document.id,
+      url: document.url ? `${document.url.split('#')[0]}#page=${pageNumber}` : '', kind: 'paper' };
+  }
+
+  async function readPdf(bytes, url, signal, onProgress = () => {}, name = '') {
+    return openPdf(bytes, signal, async pdf => {
+      const pdfDocument = { bytes, url, name: name.slice(0, 120), pageCount: pdf.numPages, id: pdf.fingerprints.join(':') };
       const records = [];
       let characters = 0;
       const pages = Math.min(pdf.numPages, 120);
@@ -54,21 +76,28 @@
         if (signal?.aborted) throw new Error('readerCancelled');
         onProgress(pageNumber, pages);
         const page = await pdf.getPage(pageNumber);
-        const content = await page.getTextContent();
-        const text = content.items.map(item => typeof item.str === 'string' ? item.str + (item.hasEOL ? '\n' : ' ') : '').join('').trim();
-        records.push({ text, locator: `PDF p. ${pageNumber}`, section: `PDF p. ${pageNumber}`, url: url ? `${url.split('#')[0]}#page=${pageNumber}` : '', kind: 'paper' });
-        characters += text.length;
+        const record = await pageRecord(page, pdfDocument);
+        records.push(record);
+        characters += record.text.length;
         page.cleanup();
         if (characters >= 240000) break;
       }
       const result = R.makeSources(records);
-      if (result.characters < 30) throw new Error('readerPdfNoText');
-      return { ...result, scope: 'pdf-text', truncated: result.truncated || pdf.numPages > pages || characters >= 240000 };
-    } catch (error) {
-      if (signal?.aborted) throw new Error('readerCancelled');
-      if (/^reader[A-Z]/.test(error.message)) throw error;
-      throw new Error('readerPdfFailed');
-    } finally { signal?.removeEventListener('abort', abort); await task.destroy(); }
+      return { ...result, pdfDocument, scope: 'pdf-text', truncated: result.truncated || pdf.numPages > pages || characters >= 240000 };
+    });
+  }
+
+  async function readPdfPage(pdfDocument, pageNumber, canvas, signal) {
+    if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > pdfDocument.pageCount) throw new Error('readerPageInvalid');
+    return openPdf(pdfDocument.bytes, signal, async pdf => {
+      const page = await pdf.getPage(pageNumber);
+      const original = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: Math.min(1.6, 1100 / Math.max(original.width, original.height)) });
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      const [record] = await Promise.all([pageRecord(page, pdfDocument), page.render({ canvas, viewport }).promise]);
+      return R.makeSources([record]).sources.map(source => ({ ...source, id: `P${pageNumber}${source.id}` }));
+    });
   }
 
   async function loadPaper(paper, tabId, signal, onProgress) {
@@ -88,9 +117,7 @@
     }
     if (pdfUrl) {
       try {
-        const resource = await fetchBytes(pdfUrl, signal);
-        if (!new TextDecoder('ascii').decode(resource.bytes.slice(0, 1024)).includes('%PDF-')) throw new Error('readerPdfFailed');
-        return await readPdf(resource.bytes, resource.url, signal, onProgress);
+        return await loadPdf(pdfUrl, signal, onProgress);
       } catch (error) {
         if (signal?.aborted) throw error;
         pdfError = error;
@@ -103,5 +130,11 @@
     return { ...result, scope: extracted.scope || 'page' };
   }
 
-  root.PaperReadingDocument = { loadPaper, readPdf };
+  async function loadPdf(url, signal, onProgress) {
+    const resource = await fetchBytes(url, signal);
+    if (!new TextDecoder('ascii').decode(resource.bytes.slice(0, 1024)).includes('%PDF-')) throw new Error('readerPdfFailed');
+    return readPdf(resource.bytes, resource.url, signal, onProgress);
+  }
+
+  root.PaperReadingDocument = { loadPaper, loadPdf, readPdf, readPdfPage };
 })(globalThis);

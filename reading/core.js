@@ -69,12 +69,33 @@
         if (total >= MAX_DOCUMENT || sources.length >= 240) { truncated = true; break; }
         const part = text.slice(offset, Math.min(offset + 1400, offset + MAX_DOCUMENT - total));
         sources.push({ id: `S${sources.length + 1}`, text: part, section: cleanText(record.section).slice(0, 180),
-          locator: cleanText(record.locator).slice(0, 180), url: safeSourceUrl(record.url), kind: record.kind || 'paper' });
+          locator: cleanText(record.locator).slice(0, 180), url: safeSourceUrl(record.url), kind: record.kind || 'paper',
+          ...(record.page ? { page: record.page, pdfId: record.pdfId } : {}), ...(record.format ? { format: record.format } : {}) });
         total += part.length;
       }
       if (truncated) break;
     }
     return { sources, truncated, characters: total };
+  }
+
+  function focusSources(document, { section = '', page = 0, table = '' } = {}) {
+    if (!section && !page && !table) return document;
+    const target = source => page ? source.page === page : table ? source.format === 'table' && source.locator === table : source.section === section;
+    const focus = page ? `PDF p. ${page}` : table || section;
+    const matching = document.sources.filter(target);
+    if (!matching.length) return { ...document, sources: [], focus };
+    const neighbors = new Set();
+    document.sources.forEach((source, index) => {
+      if (!target(source)) return;
+      for (const position of [index - 1, index + 1]) {
+        const neighbor = document.sources[position];
+        if (neighbor && !target(neighbor)) neighbors.add(neighbor.id);
+      }
+    });
+    const adjacent = document.sources.filter(source => neighbors.has(source.id)).slice(0, 4);
+    return { ...document, sources: [...matching, ...adjacent], focusOmitted: document.sources.length - matching.length - adjacent.length,
+      focus,
+      priority: new Set(matching.map(source => source.id)) };
   }
 
   function selectContext(document, mode = 'overview', question = '', excerpt = '') {
@@ -87,7 +108,9 @@
     const terms = [...words].slice(0, 96);
     const hint = MODE_HINTS[mode] || MODE_HINTS.overview;
     const ranked = sources.map((source, index) => {
-      let score = mode !== 'qa' && hint.test(source.section) ? 12 : 0;
+      let score = document?.priority?.has(source.id) ? 1000 : 0;
+      if (mode !== 'qa' && hint.test(source.section)) score += 12;
+      if (mode === 'experiment' && source.format === 'table') score += 12;
       if (hint.test(source.text)) score += 3;
       if (terms.length) {
         const searchable = `${source.section} ${source.text}`.toLowerCase();
@@ -102,11 +125,11 @@
     if (provided) {
       const match = sources.find(source => source.text.includes(provided));
       chosen.push({ id: 'E1', text: provided, section: match?.section || '', locator: match?.locator || '',
-        url: match?.url || '', kind: match ? 'selection' : 'provided' });
+        url: match?.url || '', kind: match ? 'selection' : 'provided', ...(match?.page ? { page: match.page, pdfId: match.pdfId } : {}) });
       characters = provided.length;
     }
     // Include high-scoring passages, with a few evenly spaced passages for broad context.
-    const coverage = sources.length > 8 ? [0, Math.floor(sources.length / 3), Math.floor(2 * sources.length / 3), sources.length - 1] : [];
+    const coverage = !document?.focus && sources.length > 8 ? [0, Math.floor(sources.length / 3), Math.floor(2 * sources.length / 3), sources.length - 1] : [];
     const candidates = [...coverage.map(index => ({ source: sources[index], index })), ...ranked];
     const seen = new Set();
     const selected = [];
@@ -117,7 +140,8 @@
       characters += source.text.length;
     }
     selected.sort((a, b) => a.index - b.index).forEach(item => chosen.push(item.source));
-    return { sources: chosen, characters, omitted: Math.max(0, sources.length - selected.length),
+    return { sources: chosen, characters, omitted: Math.max(0, sources.length - selected.length) + (document?.focusOmitted || 0),
+      ...(document?.focus ? { focus: document.focus } : {}),
       scope: provided ? (sources.length ? `${document.scope}+excerpt` : 'provided') : document?.scope || 'abstract' };
   }
 
@@ -166,25 +190,28 @@
       part.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/!\[/g, '\\![')).join('');
   }
 
-  function formatReport(report) {
+  function formatReport(report, level = 2) {
+    const heading = '#'.repeat(level);
+    const childHeading = heading + '#';
     const labels = { paper: 'Paper evidence', background: 'Background explanation', proposal: 'Proposal to validate', unknown: 'Not established by the supplied text' };
-    const lines = ['## Reading assistant', '', `- Mode: ${noteText(report.mode)}`, `- Model: ${noteText(report.model)}`, `- Generated: ${report.createdAt}`,
+    const lines = [`${heading} ${level === 2 ? 'Reading assistant' : 'Analysis'}`, '', `- Mode: ${noteText(report.mode)}`, `- Model: ${noteText(report.model)}`, `- Generated: ${report.createdAt}`,
       `- Source scope: ${report.context.scope}; ${report.context.sources.length} passages; ${report.context.omitted} passages omitted`,
       `- Paper/version: ${noteText(report.paperKey)}`, '', noteText(report.analysis.summary), ''];
     if (report.question) lines.push(`Question: ${noteText(report.question)}`, '');
+    if (report.context.focus) lines.push(`Focus: ${noteText(report.context.focus)}`, '');
     if (report.topic) lines.push(`Research topic: ${noteText(report.topic)}`, '');
     if (report.analysis.screening) {
       const { priority, tags } = report.analysis.screening;
       lines.push(`- Reading priority: ${priority}`, `- Suggested tags: ${tags.join(', ')}`, '');
     }
     for (const section of report.analysis.sections) {
-      lines.push(`### ${noteText(section.title).replace(/\n/g, ' ')}`, '', `*${labels[section.type]}*${section.sources.length ? ` — ${section.sources.map(id => `[${id}]`).join(', ')}` : ''}`, '', noteText(section.text), '');
+      lines.push(`${childHeading} ${noteText(section.title).replace(/\n/g, ' ')}`, '', `*${labels[section.type]}*${section.sources.length ? ` — ${section.sources.map(id => `[${id}]`).join(', ')}` : ''}`, '', noteText(section.text), '');
     }
-    if (report.analysis.followUp.length) lines.push('### Questions to explore', '', ...report.analysis.followUp.map(item => `- ${noteText(item)}`), '');
+    if (report.analysis.followUp.length) lines.push(`${childHeading} Questions to explore`, '', ...report.analysis.followUp.map(item => `- ${noteText(item)}`), '');
     const cited = new Set(report.analysis.sections.flatMap(section => section.sources));
-    lines.push('### Source passages', '');
+    lines.push(`${childHeading} Source passages`, '');
     for (const source of report.context.sources.filter(source => cited.has(source.id))) {
-      lines.push(`**[${source.id}] ${noteText(source.section || source.locator || source.kind).replace(/\n/g, ' ')}**`, '');
+      lines.push(`**[${source.id}] ${noteText(source.locator || source.section || source.kind).replace(/\n/g, ' ')}**`, '');
       const url = safeSourceUrl(source.url);
       if (url) lines.push(`[Open source](<${url.replace(/>/g, '%3E')}>)`, '');
       lines.push(...noteText(source.text).split('\n').map(line => `> ${line}`), '');
@@ -192,7 +219,7 @@
     return lines.join('\n');
   }
 
-  const api = { MODES, MAX_CONTEXT, DEFAULT_CONFIG, cleanText, endpointInfo, normalizeConfig, paperKey, safeSourceUrl, makeSources, selectContext, parseAnalysis, normalizeSuggestedTags, fingerprint, formatReport };
+  const api = { MODES, MAX_CONTEXT, DEFAULT_CONFIG, cleanText, endpointInfo, normalizeConfig, paperKey, safeSourceUrl, makeSources, focusSources, selectContext, parseAnalysis, normalizeSuggestedTags, fingerprint, formatReport, noteText };
   root.PaperReading = Object.assign(root.PaperReading || {}, api);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);
