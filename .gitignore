@@ -7,3 +7,5 @@ Thumbs.db
 *.zip
 DEVELOPMENT.md
 AGENTS.md
+.local/
+test-results/

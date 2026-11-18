@@ -39,6 +39,39 @@
       <button id="addMappingBtn" class="btn btn-secondary btn-small" data-i18n="optAddMapping">+ Add Rule</button>
     </div>
 
+    <fieldset class="reading-settings">
+      <legend data-i18n="readerTitle">Reading assistant</legend>
+      <p class="hint" data-i18n="readingSettingsIntro">Optional AI analysis using your own OpenAI-compatible chat-completions service. Existing collection features work without it.</p>
+      <div class="field checkbox-field">
+        <label><input type="checkbox" id="readingEnabled"><span data-i18n="readingEnable">Enable AI reading</span></label>
+      </div>
+      <div class="field">
+        <label for="readingEndpoint" data-i18n="readingEndpoint">API base URL</label>
+        <input type="url" id="readingEndpoint" class="input-reset" placeholder="https://api.example.com/v1" autocomplete="off">
+        <p class="hint" data-i18n="readingEndpointHint">Use your provider's base URL or full /chat/completions URL. HTTPS is required except for localhost services.</p>
+      </div>
+      <div class="field">
+        <label for="readingModel" data-i18n="readingModel">Model ID</label>
+        <input type="text" id="readingModel" class="input-reset" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="readingApiKey" data-i18n="readingApiKey">API key (if required by your service)</label>
+        <input type="password" id="readingApiKey" class="input-reset" autocomplete="off" spellcheck="false">
+        <p class="hint" data-i18n="readingKeyHint">Stored in this browser profile, not encrypted or synced by this extension. Only sent to the configured model endpoint when you click Analyze.</p>
+      </div>
+      <div class="field">
+        <label for="readingLanguage" data-i18n="readingLanguage">Analysis language</label>
+        <select id="readingLanguage" class="input-reset">
+          <option value="auto" data-i18n="readingLanguageAuto">Follow browser language</option>
+          <option value="en">English</option>
+          <option value="zh_CN">简体中文</option>
+        </select>
+      </div>
+      <p class="hint" data-i18n="readingPrivacyHint">Only requested passages, paper metadata and your question are sent. Up to ten completed analyses are cached locally. Saving settings grants access only to the service origin you enter.</p>
+      <button type="button" class="btn btn-secondary btn-small" id="readingClearCache" data-i18n="readingClearCache">Clear analysis cache</button>
+      <p id="readingSettingsStatus" role="status" aria-live="polite" class="hint"></p>
+    </fieldset>
+
     <div class="field">
       <label data-i18n="optTemplateTitle">Markdown Template</label>
       <p class="hint" data-i18n="optTemplateHint">Use {{variable}} for interpolation. Available: title, authors, year, venue, tags, arxiv_id, doi, pdf_url, web_url, abstract, safe_title.</p>
@@ -46,12 +79,14 @@
       <button id="resetTemplateBtn" class="btn btn-secondary btn-small" data-i18n="optTemplateReset">Reset to Default</button>
     </div>
 
-    <div id="status" class="status hidden"></div>
+    <div id="status" class="status hidden" role="status"></div>
 
     <div class="actions">
       <button id="saveBtn" class="btn btn-primary" data-i18n="optSaveSettings">Save Settings</button>
     </div>
   </div>
+  <script src="../reading/core.js"></script>
+  <script src="../reading/settings.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="../vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="../reading/reading.css">
   <script src="i18n.js"></script>
 </head>
 <body>
@@ -19,9 +21,13 @@
       <span data-i18n="extExtracting">Extracting metadata...</span>
     </div>
 
-    <div id="error" class="error hidden"></div>
+    <div id="error" class="error hidden" role="alert"></div>
 
     <div id="form" class="form hidden">
+      <div id="paperSwitch" class="panel-notice" hidden>
+        <p id="paperSwitchMessage" role="status" data-i18n="readerPageChanged"></p>
+        <button type="button" id="readerRefresh" class="btn btn-secondary" data-i18n="readerRefresh">Refresh collector</button>
+      </div>
       <div class="field">
         <label data-i18n="extTitle">Title</label>
         <div class="value readonly" id="title"></div>
@@ -34,11 +40,11 @@
 
       <div class="field-row">
         <div class="field flex-year">
-          <label data-i18n="extYear">Year</label>
+        <label for="year" data-i18n="extYear">Year</label>
           <input type="text" id="year" class="input">
         </div>
         <div class="field flex-venue">
-          <label data-i18n="extVenue">Venue</label>
+        <label for="venue" data-i18n="extVenue">Venue</label>
           <input type="text" id="venue" class="input">
         </div>
       </div>
@@ -53,8 +59,63 @@
         <div id="publicationTimeline" class="publication-timeline"></div>
       </div>
 
+      <details class="field reading-assistant" id="readerPanel">
+        <summary data-i18n="readerTitle">Reading assistant</summary>
+        <div class="reading-body">
+          <p class="reading-hint" data-i18n="readerIntro">Understand methods, formulas and experiments, then explore the knowledge and research steps behind them.</p>
+          <button type="button" class="reading-link" id="readerSettings" data-i18n="readerSettings">AI settings</button>
+          <div class="reading-source-actions">
+            <button type="button" id="readerLoad" class="btn btn-secondary" data-i18n="readerLoad">Load paper text</button>
+            <button type="button" id="readerSelection" class="btn btn-secondary" data-i18n="readerSelection">Use selected text</button>
+            <button type="button" id="readerImport" class="btn btn-secondary" data-i18n="readerImport">Import PDF</button>
+            <input type="file" id="readerFile" accept="application/pdf,.pdf" hidden>
+          </div>
+          <label for="readerExcerpt" data-i18n="readerExcerpt">Passage or formula to explore (optional)</label>
+          <textarea id="readerExcerpt" class="note-input" maxlength="12000" data-i18n-placeholder="readerExcerptHint" placeholder="Paste a passage or LaTeX formula, or use selected text."></textarea>
+          <label class="reading-export"><input type="checkbox" id="readerExcerptOnly" checked><span data-i18n="readerExcerptOnly">Use only this excerpt when one is provided</span></label>
+          <label for="readerMode" data-i18n="readerMode">Explore</label>
+          <select id="readerMode" class="reading-select">
+            <option value="overview" data-i18n="readerModeOverview">Paper overview</option>
+            <option value="screen" data-i18n="readerModeScreen">Screen for a research topic</option>
+            <option value="quick" data-i18n="readerModeQuick">Chinese quick-read card</option>
+            <option value="explain" data-i18n="readerModeExplain">Explain a passage</option>
+            <option value="qa" data-i18n="readerModeQa">Ask about the full text</option>
+            <option value="method" data-i18n="readerModeMethod">Method step by step</option>
+            <option value="formula" data-i18n="readerModeFormula">Formula and derivation</option>
+            <option value="experiment" data-i18n="readerModeExperiment">Experiments and evidence</option>
+            <option value="learning" data-i18n="readerModeLearning">Learn the prerequisites</option>
+            <option value="research" data-i18n="readerModeResearch">Plan a research verification</option>
+          </select>
+          <div id="readerTopicField" hidden>
+            <label for="readerTopic" data-i18n="readerTopic">Research topic</label>
+            <input id="readerTopic" class="reading-select" type="text" maxlength="500" data-i18n-placeholder="readerTopicHint">
+          </div>
+          <p id="readerModeHint" class="reading-hint" hidden></p>
+          <label for="readerQuestion" data-i18n="readerQuestion">Your question (optional)</label>
+          <textarea id="readerQuestion" class="note-input reading-question" maxlength="2000" data-i18n-placeholder="readerQuestionHint" placeholder="Which assumption makes this step valid?"></textarea>
+          <details id="readerSourceDetails" class="reading-sources">
+            <summary id="readerSourceSummary" data-i18n="readerSources">Passages sent for analysis</summary>
+            <p id="readerCoverage" class="reading-hint"></p>
+            <div id="readerSources"></div>
+          </details>
+          <p class="reading-hint" data-i18n="readerSendNotice">Analyze sends the passages shown above and your question to your configured model service. Nothing is sent automatically.</p>
+          <div class="reading-actions">
+            <button type="button" id="readerAnalyze" class="btn btn-primary" data-i18n="readerAnalyze">Analyze</button>
+            <button type="button" id="readerCancel" class="btn btn-secondary" data-i18n="extCancel" hidden>Cancel</button>
+          </div>
+          <p id="readerStatus" role="status" aria-live="polite" class="reading-status"></p>
+          <details id="readerCitations" class="reading-sources" hidden>
+            <summary data-i18n="readerResultSources">Sources for this result</summary>
+            <div id="readerCitedSources" class="reading-source-list"></div>
+          </details>
+          <div id="readerResults" class="reading-results" aria-live="polite"></div>
+          <p id="readerResultNotice" class="reading-hint" data-i18n="readerResultNotice" hidden>AI explanations may be incorrect. Check cited passages; proposed research steps require validation.</p>
+          <label id="readerExportField" class="reading-export" hidden><input type="checkbox" id="readerInclude"><span data-i18n="readerInclude">Include this analysis in the saved note</span></label>
+        </div>
+      </details>
+
       <div class="field">
-        <label data-i18n="extTags">Tags</label>
+        <label for="tagInput" data-i18n="extTags">Tags</label>
         <div class="tags-container" id="tagsContainer"></div>
         <div class="tag-input-row">
           <input type="text" id="tagInput" list="tagSuggestions" class="input" data-i18n-placeholder="extTagPlaceholder" placeholder="Type tag and press Enter...">
@@ -63,12 +124,12 @@
       </div>
 
       <div class="field">
-        <label data-i18n="extNote">Note</label>
+        <label for="noteInput" data-i18n="extNote">Note</label>
         <textarea id="noteInput" class="note-input" data-i18n-placeholder="extNotePlaceholder" placeholder="Add your reading note..."></textarea>
       </div>
 
       <div class="field">
-        <button class="collapse-trigger" id="abstractToggle">
+        <button class="collapse-trigger" id="abstractToggle" aria-controls="abstractContent" aria-expanded="false">
           <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           <span data-i18n="extAbstract">Abstract</span>
         </button>
@@ -98,11 +159,19 @@
       </div>
 
       <div class="button-row">
+        <p id="saveStatus" class="panel-notice" role="status" hidden></p>
         <button id="saveBtn" class="btn btn-primary" data-i18n="extSaveClose">Save &amp; Close</button>
         <button id="cancelBtn" class="btn btn-secondary" data-i18n="extCancel">Cancel</button>
       </div>
     </div>
   </div>
+  <script src="../vendor/katex/katex.min.js"></script>
+  <script src="../vendor/katex/auto-render.min.js"></script>
+  <script src="../reading/core.js"></script>
+  <script src="../reading/extract.js"></script>
+  <script src="../reading/model.js"></script>
+  <script src="../reading/document.js"></script>
+  <script src="../reading/ui.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
