@@ -10,6 +10,8 @@ PaperOneStep is a vanilla JavaScript Chrome Manifest V3 extension for researcher
 - **Obsidian-ready Markdown**: generates YAML frontmatter, author links, abstract, DOI/PDF links, a reading note section, BibTeX, and optional inline tags.
 - **PDF download support**: saves the PDF next to the Markdown note when a PDF URL is available; PDF download is enabled by default but can be disabled per save.
 - **Publication enrichment**: uses page metadata, arXiv comments, Semantic Scholar, and Crossref to show the latest known publication venue while preserving the preprint timeline.
+- **Optional reading assistant**: explore methods, formulas, experiments, prerequisite knowledge, and research verification plans using a model service you configure. Analysis separates paper evidence, background explanations, and proposals, with links to the supplied source passages.
+- **Paper text and formulas**: read available arXiv HTML, extract text from PDFs, import a local PDF, or focus on a selected/pasted passage. Math is rendered locally; scanned PDFs require separately recognized text.
 - **Configurable workflow**: customize save subdirectory, filename rule, default tags, category-to-tag mappings, and the Markdown template.
 - **Side panel UI**: uses Chrome's `sidePanel` API so the paper page remains visible while you edit metadata.
 - **Light/dark mode and i18n**: native CSS dark mode and English/Simplified Chinese localization.
@@ -52,6 +54,25 @@ If PDF downloading is disabled for the current save, or no PDF URL is found, onl
 
 The extension saves your note and records recently used tags for future autocomplete.
 
+## Optional AI Reading
+
+Collection works without AI configuration. To enable reading analysis:
+
+1. Open settings and enable **AI reading**.
+2. Enter your model service's API base URL (including its API prefix, such as `/v1`), model ID, and API key if required. The service must support the Chat Completions request/response format. HTTPS is required except for localhost services.
+3. Save settings and grant access to that service origin.
+4. On a paper page, expand **Reading assistant**. Load paper text, import a PDF, use a selected passage, or paste text/LaTeX. When an excerpt is provided, the default is to send only that excerpt; uncheck the excerpt-only option to include selected paper context.
+5. Choose an analysis direction, optionally ask a question, review the source passages, and click **Analyze**.
+6. Follow citation buttons to the supplied text. Choose whether to include the analysis when using the existing **Save & Close** action.
+
+Analysis is on demand and never runs automatically. Personal research profiles are not required.
+The existing template, manual note, tags, PDF option, and download-directory workflow remain available.
+Use `{{reading_assistant}}` to place the analysis in a custom Markdown template; if the variable
+is absent, an opted-in analysis is appended as a separate section without changing the stored template.
+
+Read [Reading assistant usage and development](docs/reading-assistant.md) for source handling,
+limits, privacy, and verification steps.
+
 ## Settings
 
 Open the extension options page to configure:
@@ -65,7 +86,7 @@ Open the extension options page to configure:
 | Tag Mappings | Built in | Maps paper categories such as `cs.CL` to tags such as `nlp`. |
 | Markdown Template | Built in | User-editable template using `{{variable}}` interpolation. |
 
-Template variables include `title`, `authors`, `authors_wikilinks`, `year`, `venue`, `latest_year`, `latest_venue`, `preprint_year`, `preprint_venue`, `published_year`, `published_venue`, `publication_status`, `publication_timeline`, `tags`, `inline_tags`, `safe_title`, `arxiv_id`, `doi`, `pdf_url`, `pdf_filename`, `pdf_link`, `web_url`, `abstract`, `citation_count`, `note`, and `bibtex`.
+Template variables include `title`, `authors`, `authors_wikilinks`, `year`, `venue`, `latest_year`, `latest_venue`, `preprint_year`, `preprint_venue`, `published_year`, `published_venue`, `publication_status`, `publication_timeline`, `tags`, `inline_tags`, `safe_title`, `arxiv_id`, `doi`, `pdf_url`, `pdf_filename`, `pdf_link`, `web_url`, `abstract`, `citation_count`, `note`, `reading_assistant`, and `bibtex`.
 
 ## Project Structure
 
@@ -87,7 +108,11 @@ paper_one_step/
 ├── _locales/
 │   ├── en/messages.json
 │   └── zh_CN/messages.json
-└── icons/
+├── icons/
+├── reading/      # Optional text extraction, model client, reading UI and settings
+├── vendor/       # Local PDF.js/KaTeX assets and licenses; no CDN execution
+├── tests/        # Node tests and optional isolated-browser QA
+└── docs/
 ```
 
 ## Development Notes
@@ -96,6 +121,7 @@ paper_one_step/
 - There is no `package.json`, bundler, TypeScript, React, Tailwind, or build step.
 - `background.js` runs as a Manifest V3 service worker. Use `data:text/markdown;charset=utf-8` URIs for generated Markdown downloads; `URL.createObjectURL()` is not available there.
 - UI strings should use `data-i18n` or `data-i18n-placeholder`, and both locale files must be updated when text changes.
+- Run `node --test tests/reading.test.cjs` with Node.js 22+ for dependency-free regression checks. Browser QA is optional; see the reading assistant development guide. Node.js is not required to install or use the extension.
 
 ## Browser Support
 
@@ -104,7 +130,9 @@ paper_one_step/
 
 ## Privacy
 
-PaperOneStep runs client-side. The only external API call is an anonymous request to Semantic Scholar when DOI or arXiv ID is available. No personal data, browsing history, or user account information is collected by this extension.
+PaperOneStep runs client-side. Publication enrichment requests paper identifiers from Semantic Scholar and Crossref. Loading paper text requests the chosen paper source. When you explicitly click **Analyze**, the selected source passages, paper metadata, and your question are sent to the model endpoint you configured. The extension does not automatically send your browsing history, local vault contents, or personal research profile.
+
+Model credentials are stored in this browser profile's `chrome.storage.local`, not encrypted or synced by this extension. They are sent only to the configured model endpoint. Up to ten completed analyses (including their source excerpts) are cached locally and can be cleared in settings. PDFs are parsed locally, and PDF.js, KaTeX, workers, character maps, and fonts are bundled with the extension. The model provider's own data-handling policies apply to submitted analysis requests.
 
 ## License
 

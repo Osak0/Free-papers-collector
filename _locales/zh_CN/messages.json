@@ -150,7 +150,7 @@
     "message": "Markdown 模板"
   },
   "optTemplateHint": {
-    "message": "可用变量：title, authors, authors_wikilinks, year, venue, latest_year, latest_venue, preprint_year, preprint_venue, published_year, published_venue, publication_status, publication_timeline, tags, arxiv_id, doi, pdf_url, pdf_filename, pdf_link, web_url, abstract, safe_title, citation_count, note, bibtex。"
+    "message": "可用变量：title, authors, authors_wikilinks, year, venue, latest_year, latest_venue, preprint_year, preprint_venue, published_year, published_venue, publication_status, publication_timeline, tags, arxiv_id, doi, pdf_url, pdf_filename, pdf_link, web_url, abstract, safe_title, citation_count, note, bibtex。, reading_assistant."
   },
   "optTemplateReset": {
     "message": "恢复默认模板"
@@ -160,5 +160,344 @@
   },
   "optFilenameHint": {
     "message": "可用变量：{{safe_title}}, {{first_author}}, {{year}}"
+  },
+  "readerTitle": {
+    "message": "阅读助手"
+  },
+  "readerIntro": {
+    "message": "理解方法、公式与实验，补充相关知识，并探索可验证的科研应用。"
+  },
+  "readerSettings": {
+    "message": "AI 设置"
+  },
+  "readerLoad": {
+    "message": "载入论文正文"
+  },
+  "readerSelection": {
+    "message": "使用网页选段"
+  },
+  "readerImport": {
+    "message": "导入 PDF"
+  },
+  "readerExcerpt": {
+    "message": "需要理解的段落或公式（可选）"
+  },
+  "readerExcerptHint": {
+    "message": "可粘贴段落或 LaTeX 公式，也可从网页获取选段。"
+  },
+  "readerMode": {
+    "message": "分析方向"
+  },
+  "readerModeOverview": {
+    "message": "论文整体理解"
+  },
+  "readerModeMethod": {
+    "message": "方法逐步拆解"
+  },
+  "readerModeFormula": {
+    "message": "公式与推导解释"
+  },
+  "readerModeExperiment": {
+    "message": "实验设计与证据"
+  },
+  "readerModeLearning": {
+    "message": "补充前置知识"
+  },
+  "readerModeResearch": {
+    "message": "设计科研验证方案"
+  },
+  "readerQuestion": {
+    "message": "想进一步弄懂的问题（可选）"
+  },
+  "readerQuestionHint": {
+    "message": "例如：这一步推导需要哪些假设？"
+  },
+  "readerSources": {
+    "message": "将发送给模型的原文片段"
+  },
+  "readerSendNotice": {
+    "message": "点击“分析”才会将上方片段、论文信息及问题发送到你配置的模型服务，不会自动发送。"
+  },
+  "readerAnalyze": {
+    "message": "分析"
+  },
+  "readerRefresh": {
+    "message": "重新载入当前论文"
+  },
+  "readerInclude": {
+    "message": "将本次分析一并保存到论文笔记"
+  },
+  "readerResultNotice": {
+    "message": "AI 解读可能有误，请对照引用片段核实；科研应用建议仍需实际验证。"
+  },
+  "readerContextSummary": {
+    "message": "$1 · $2 个片段 · $3 字符"
+  },
+  "readerPartialContext": {
+    "message": "当前只发送部分已载入文本，结论可能受未选入章节影响。PDF 最多提取 120 页，文档最多保留 240,000 字符。"
+  },
+  "readerScopeAbstract": {
+    "message": "仅摘要"
+  },
+  "readerScopeHtml": {
+    "message": "HTML 论文正文"
+  },
+  "readerScopePdf": {
+    "message": "PDF 提取文本"
+  },
+  "readerScopePage": {
+    "message": "网页可见文本"
+  },
+  "readerScopeProvided": {
+    "message": "提供的选段"
+  },
+  "readerOpenSource": {
+    "message": "查看原文依据"
+  },
+  "readerFollowUp": {
+    "message": "继续探索的问题"
+  },
+  "readerKindPaper": {
+    "message": "基于已提供的论文文本"
+  },
+  "readerKindBackground": {
+    "message": "补充背景知识"
+  },
+  "readerKindProposal": {
+    "message": "待验证的科研建议"
+  },
+  "readerKindUnknown": {
+    "message": "当前材料尚不能确认"
+  },
+  "readerReady": {
+    "message": "可基于摘要开始，或先载入正文、选择段落。分析前请在 AI 设置中配置模型服务。"
+  },
+  "readerLoading": {
+    "message": "正在载入论文文本…"
+  },
+  "readerTextReady": {
+    "message": "文本已载入，可先查看原文片段再分析。"
+  },
+  "readerPdfProgress": {
+    "message": "正在提取 PDF 第 $1 / $2 页…"
+  },
+  "readerPdfReady": {
+    "message": "PDF 文本已提取。公式和表格可能缺失符号或顺序变化，请结合原文核对。"
+  },
+  "readerImportedFile": {
+    "message": "已导入：$1。请确认该 PDF 与当前显示的论文一致。"
+  },
+  "readerSelectionReady": {
+    "message": "已获取选段，可修改文本，或载入更多正文作为上下文。"
+  },
+  "readerAnalyzing": {
+    "message": "正在分析所选片段…可随时取消请求。"
+  },
+  "readerDone": {
+    "message": "分析已完成。可查看原文依据，并选择是否一并保存到笔记。"
+  },
+  "readerCached": {
+    "message": "已使用与论文版本、上下文及模型匹配的本地缓存结果。"
+  },
+  "readerInvalidEndpoint": {
+    "message": "请输入 HTTPS API 地址，不要在地址中包含密钥、查询参数或片段；HTTP 仅支持本机服务。"
+  },
+  "readerMissingModel": {
+    "message": "请填写模型服务提供的模型名称。"
+  },
+  "readerConfigureFirst": {
+    "message": "请打开 AI 设置，启用阅读分析并配置 API 地址和模型。"
+  },
+  "readerNoText": {
+    "message": "没有可分析的文本。请载入正文、导入带文本层的 PDF，或粘贴段落。"
+  },
+  "readerNoSelection": {
+    "message": "请先在论文网页选中段落，再点击“使用网页选段”，也可直接粘贴文本。"
+  },
+  "readerInvalidResponse": {
+    "message": "模型返回的分析不完整或格式无效，请重试或更换模型。"
+  },
+  "readerInvalidCitations": {
+    "message": "模型引用了不存在的片段或缺少原文依据，本次分析未被采纳，请重试。"
+  },
+  "readerAuthFailed": {
+    "message": "模型服务拒绝了认证，请在设置中检查 API Key 和账户权限。"
+  },
+  "readerRateLimited": {
+    "message": "已达到模型服务的请求或额度限制，请稍后重试或检查账户额度。"
+  },
+  "readerServiceFailed": {
+    "message": "模型服务未能完成请求，请检查 API 地址和模型后重试。"
+  },
+  "readerTimeout": {
+    "message": "分析请求等待超过 90 秒，请缩短选段或更换响应更快的模型。"
+  },
+  "readerCancelled": {
+    "message": "请求已取消，仍可继续编辑和收藏论文。"
+  },
+  "readerNetworkError": {
+    "message": "无法连接模型服务，请检查服务地址、网络及访问权限。"
+  },
+  "readerPermissionNeeded": {
+    "message": "尚未获得站点访问权限。请保存 AI 设置以授权模型服务，或重试载入论文来源。"
+  },
+  "readerSourceFailed": {
+    "message": "未能读取论文来源，可尝试导入 PDF 或粘贴段落。"
+  },
+  "readerSourceTimeout": {
+    "message": "论文来源读取超时，请重试或导入本机 PDF。"
+  },
+  "readerFileTooLarge": {
+    "message": "请选择小于 25 MB 的 PDF。"
+  },
+  "readerPdfNoText": {
+    "message": "该 PDF 没有可用文本层。扫描版需要先 OCR，可粘贴识别后的文本继续。"
+  },
+  "readerPdfFailed": {
+    "message": "该来源无法作为 PDF 解析，请下载实际 PDF 后导入，或直接粘贴文本。"
+  },
+  "readerPageChanged": {
+    "message": "当前论文页面已改变。开始新分析前请重新载入论文；重新载入会清空尚未保存的编辑。"
+  },
+  "readerStorageFailed": {
+    "message": "未能保存设置或缓存，请检查浏览器存储后重试。"
+  },
+  "readerCacheCleared": {
+    "message": "已清除本地分析缓存。"
+  },
+  "readingSettingsIntro": {
+    "message": "可选的 AI 分析功能，使用你配置的兼容 Chat Completions 接口的模型服务。无需启用即可使用原有收藏功能。"
+  },
+  "readingEnable": {
+    "message": "启用 AI 阅读分析"
+  },
+  "readingEndpoint": {
+    "message": "API 基础地址"
+  },
+  "readingEndpointHint": {
+    "message": "填写服务商的基础地址，或完整 /chat/completions 地址。除本机服务外，必须使用 HTTPS。"
+  },
+  "readingModel": {
+    "message": "模型名称"
+  },
+  "readingApiKey": {
+    "message": "API Key（服务需要时填写）"
+  },
+  "readingKeyHint": {
+    "message": "保存在当前浏览器配置中，扩展不会加密或同步。仅在点击“分析”时发送给你配置的模型接口。"
+  },
+  "readingLanguage": {
+    "message": "分析语言"
+  },
+  "readingLanguageAuto": {
+    "message": "跟随浏览器语言"
+  },
+  "readingPrivacyHint": {
+    "message": "仅发送待分析片段、论文信息及问题；本地最多缓存十次完成的分析。保存设置时仅申请你填写的模型服务站点权限。"
+  },
+  "readingClearCache": {
+    "message": "清除分析缓存"
+  },
+  "readerExcerptOnly": {
+    "message": "提供选段时仅分析该选段"
+  },
+  "readerScopeSelection": {
+    "message": "论文网页选段"
+  },
+  "readerModeScreen": {
+    "message": "按课题筛选"
+  },
+  "readerModeQuick": {
+    "message": "中文速读卡"
+  },
+  "readerModeExplain": {
+    "message": "解释选段"
+  },
+  "readerModeQa": {
+    "message": "全文问答"
+  },
+  "readerTopic": {
+    "message": "研究课题"
+  },
+  "readerTopicHint": {
+    "message": "例如：小样本研究中的稳健性评估"
+  },
+  "readerScreenHint": {
+    "message": "有摘要时优先使用摘要。课题随本次请求发送，并与结果一起保存在本地缓存。"
+  },
+  "readerQuickHint": {
+    "message": "有摘要时优先使用摘要，生成简体中文速读卡。"
+  },
+  "readerExplainHint": {
+    "message": "先从论文网页获取选段，或粘贴段落、公式。"
+  },
+  "readerQaHint": {
+    "message": "先载入正文或导入 PDF，再提出问题。助手从已载入的正文中选取相关片段作答。"
+  },
+  "readerTopicRequired": {
+    "message": "请填写要用于筛选论文的研究课题。"
+  },
+  "readerExcerptRequired": {
+    "message": "请选择或粘贴需要解释的段落。"
+  },
+  "readerFullTextRequired": {
+    "message": "请先载入正文或导入 PDF，再使用全文问答。"
+  },
+  "readerQuestionRequired": {
+    "message": "请输入你想了解的论文问题。"
+  },
+  "readerPriority": {
+    "message": "阅读优先级"
+  },
+  "readerPriorityHigh": {
+    "message": "高"
+  },
+  "readerPriorityMedium": {
+    "message": "中"
+  },
+  "readerPriorityLow": {
+    "message": "低"
+  },
+  "readerPriorityUncertain": {
+    "message": "待确认"
+  },
+  "readerSuggestedTags": {
+    "message": "建议标签（用逗号分隔）"
+  },
+  "readerApplyTags": {
+    "message": "添加到论文标签"
+  },
+  "readerTagsApplied": {
+    "message": "已将建议标签添加到论文。"
+  },
+  "extRemoveTag": {
+    "message": "移除标签 $1"
+  },
+  "extDiscardDraft": {
+    "message": "放弃这篇论文尚未保存的编辑和阅读内容？"
+  },
+  "extSaveWhileAnalyzing": {
+    "message": "分析尚未完成。要保存当前笔记并关闭侧栏吗？"
+  },
+  "extNoteInterrupted": {
+    "message": "Markdown 下载已中断。请检查 Chrome 下载记录后重试。"
+  },
+  "extNotePending": {
+    "message": "Markdown 下载仍在进行，请在 Chrome 下载记录中确认结果。"
+  },
+  "extPdfPending": {
+    "message": "Markdown 已保存。PDF 仍在下载，笔记中保留了在线 PDF 链接。"
+  },
+  "extClosePanel": {
+    "message": "关闭"
+  },
+  "readerResultSources": {
+    "message": "本次结果的原文依据"
+  },
+  "readerPaperResumed": {
+    "message": "已返回原论文，可以继续编辑草稿。"
+  },
+  "optMappingCategory": {
+    "message": "论文分类"
   }
 }

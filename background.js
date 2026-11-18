@@ -46,6 +46,8 @@ pdf: "{{pdf_link}}"
 
 {{note}}
 
+{{reading_assistant}}
+
 \`\`\`bibtex
 {{bibtex}}
 \`\`\`
@@ -140,15 +142,15 @@ function formatPublicationTimeline(data) {
   return fallback.join('\n');
 }
 
-function generateMarkdown(data, tags, inlineTags, templateStr, pdfDownloaded) {
+function generateMarkdown(data, tags, inlineTags, templateStr, pdfDownloaded, filename, pdfSource = '') {
   const safeTitle = sanitizeFilename(data.title);
   const doiLink = data.doi ? `**DOI**: [${data.doi}](https://doi.org/${data.doi})` : '';
   const inlineTagsStr = (inlineTags && tags.length > 0) ? tags.map(t => `#${t}`).join(' ') : '';
   const authors = Array.isArray(data.authors) ? data.authors : [];
   const authorsWikilinks = authors.map(a => `[[${a}]]`).join(', ');
   const bibtex = generateBibtex(data);
-  const pdfFilename = `${safeTitle}.pdf`;
-  const pdfLink = pdfDownloaded ? `[[${pdfFilename}]]` : '';
+  const pdfFilename = `${filename || safeTitle}.pdf`;
+  const pdfLink = pdfDownloaded ? `[[${pdfFilename}]]` : pdfSource ? `[PDF](<${pdfSource}>)` : '';
 
   const replacements = {
     'title': escapeYaml(data.title) || '',
@@ -177,13 +179,23 @@ function generateMarkdown(data, tags, inlineTags, templateStr, pdfDownloaded) {
     'inline_tags': inlineTagsStr,
     'citation_count': data.citationCount !== undefined ? data.citationCount : '""',
     'note': data.note || '',
+    'reading_assistant': typeof data.reading_assistant === 'string' ? data.reading_assistant : '',
     'bibtex': bibtex
   };
 
-  let result = templateStr;
-  for (const [key, value] of Object.entries(replacements)) {
-    const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-    result = result.replace(regex, () => String(value));
+  let result = templateStr.replace(/\{\{(\w+)\}\}/g, (token, key) =>
+    Object.hasOwn(replacements, key) ? String(replacements[key]) : token);
+
+  if (!templateStr.includes('{{note}}')) {
+    const hasHeading = /^#{1,6}[ \t]+Note[ \t]*$/im.test(templateStr);
+    if (!hasHeading || data.note) {
+      result = `${result.trimEnd()}\n\n---\n\n${hasHeading ? '## Personal note' : '# Note'}\n\n${data.note || ''}\n`;
+    }
+  }
+
+  // Existing user templates remain unchanged. Opted-in analyses get a separate section.
+  if (replacements.reading_assistant && !templateStr.includes('{{reading_assistant}}')) {
+    result = `${result.trimEnd()}\n\n${replacements.reading_assistant}\n`;
   }
 
   return result;
@@ -195,7 +207,7 @@ function escapeYaml(str) {
 }
 
 function markdownToDataUri(markdown) {
-  const encoded = encodeURIComponent(markdown);
+  const encoded = encodeURIComponent(markdown.toWellFormed());
   return `data:text/markdown;charset=utf-8,${encoded}`;
 }
 
@@ -220,19 +232,38 @@ async function handleSave(data, tags, inlineTags, options) {
     pdfDownloaded: false,
     pdfDisabled: false,
     pdfSkipped: false,
+    pdfPending: false,
     pdfError: ''
   };
+  let pdfSource = '';
+  try {
+    const url = new URL(data.pdf_url);
+    if (['https:', 'http:'].includes(url.protocol) && !url.username && !url.password) pdfSource = url.href;
+  } catch { /* Some papers provide no PDF URL. */ }
+  let localPdfBase = filename;
 
   if (!shouldDownloadPdf) {
     result.pdfDisabled = true;
-  } else if (data.pdf_url) {
+  } else if (pdfSource) {
     try {
-      await chrome.downloads.download({
-        url: data.pdf_url,
+      const id = await chrome.downloads.download({
+        url: pdfSource,
         filename: pdfFilename,
+        conflictAction: 'uniquify',
         saveAs: false
       });
-      result.pdfDownloaded = true;
+      const download = await observeDownload(id, 1200);
+      if (download?.state === 'interrupted') {
+        result.pdfError = download.error || 'interrupted';
+      } else if (download?.state === 'complete') {
+        const finalName = download.filename?.split(/[\\/]/).pop();
+        result.pdfDownloaded = Boolean(finalName && /\.pdf$/i.test(finalName) &&
+          (!download.mime || /pdf|octet-stream/i.test(download.mime)));
+        if (result.pdfDownloaded) localPdfBase = finalName.slice(0, -4);
+        else result.pdfError = 'invalid PDF';
+      } else {
+        result.pdfPending = true;
+      }
     } catch (err) {
       result.pdfError = err.message || String(err);
       console.warn('PDF download failed:', err);
@@ -242,16 +273,21 @@ async function handleSave(data, tags, inlineTags, options) {
     console.warn('PDF download skipped: no PDF URL was extracted.');
   }
 
-  const markdown = generateMarkdown(data, tags, inlineTags, config.markdownTemplate, result.pdfDownloaded);
+  const markdown = generateMarkdown(data, tags, inlineTags, config.markdownTemplate, result.pdfDownloaded, localPdfBase,
+    shouldDownloadPdf ? pdfSource : '');
   const mdUri = markdownToDataUri(markdown);
 
-  await chrome.downloads.download({
+  const markdownId = await chrome.downloads.download({
     url: mdUri,
     filename: mdFilename,
+    conflictAction: 'uniquify',
     saveAs: false
   });
+  const note = await observeDownload(markdownId, 1600);
+  if (note?.state === 'interrupted') throw new Error(chrome.i18n.getMessage('extNoteInterrupted'));
+  result.markdownPending = note?.state !== 'complete';
 
-  if (chrome.notifications && chrome.notifications.create) {
+  if (!result.markdownPending && chrome.notifications?.create) {
     const title = chrome.i18n.getMessage('notifySavedTitle') || 'PaperOneStep';
     let message = chrome.i18n.getMessage('notifySavedMessage', [data.title || data.arxiv_id || filename]) || `Saved: ${data.title || data.arxiv_id || filename}`;
     if (result.pdfSkipped) {
@@ -261,102 +297,25 @@ async function handleSave(data, tags, inlineTags, options) {
     } else if (result.pdfDisabled) {
       message += ` ${chrome.i18n.getMessage('notifyPdfDisabled') || 'PDF not downloaded.'}`;
     }
-    chrome.notifications.create({
+    Promise.resolve().then(() => chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icons/icon48.png',
       title,
       message
-    });
+    })).catch(error => console.warn('Notification failed:', error));
   }
 
   return result;
 }
-const NOTE_SECTION_HEADING_RE = /^#{1,6}\s+Note\s*$/im;
 
-function appendNoteSectionToMarkdown(markdown) {
-  if (typeof markdown !== 'string' || NOTE_SECTION_HEADING_RE.test(markdown)) {
-    return markdown;
-  }
-
-  return `${markdown.replace(/\s+$/, '')}\n\n---\n\n# Note\n\n{{note}}\n`;
+async function observeDownload(id, waitMs) {
+  const deadline = Date.now() + waitMs;
+  do {
+    let item;
+    try { [item] = await chrome.downloads.search({ id }); }
+    catch { return null; }
+    if (item?.state === 'complete' || item?.state === 'interrupted') return item;
+    if (Date.now() >= deadline) return item;
+    await new Promise(resolve => setTimeout(resolve, 120));
+  } while (true);
 }
-
-async function migrateSavedMarkdownTemplateNoteSection() {
-  if (typeof chrome === 'undefined' || !chrome.storage?.local) {
-    return;
-  }
-
-  const { markdownTemplate } = await chrome.storage.local.get('markdownTemplate');
-  if (typeof markdownTemplate !== 'string' || !markdownTemplate.trim()) {
-    return;
-  }
-
-  const nextTemplate = appendNoteSectionToMarkdown(markdownTemplate);
-  if (nextTemplate !== markdownTemplate) {
-    await chrome.storage.local.set({ markdownTemplate: nextTemplate });
-  }
-}
-
-function decodeMarkdownDataUrl(url) {
-  const commaIndex = url.indexOf(',');
-  if (commaIndex === -1) {
-    return null;
-  }
-
-  const metadata = url.slice(0, commaIndex);
-  const payload = url.slice(commaIndex + 1);
-  const isBase64 = /;base64/i.test(metadata);
-
-  try {
-    return {
-      metadata,
-      isBase64,
-      markdown: isBase64 ? atob(payload) : decodeURIComponent(payload),
-    };
-  } catch (error) {
-    console.warn('Failed to decode markdown download URL:', error);
-    return null;
-  }
-}
-
-function encodeMarkdownDataUrl({ metadata, isBase64, markdown }) {
-  const payload = isBase64 ? btoa(markdown) : encodeURIComponent(markdown);
-  return `${metadata},${payload}`;
-}
-
-function patchMarkdownDownloadNoteSection() {
-  if (
-    typeof chrome === 'undefined' ||
-    !chrome.downloads?.download ||
-    chrome.downloads.download.__paperOneStepNotePatch
-  ) {
-    return;
-  }
-
-  const originalDownload = chrome.downloads.download.bind(chrome.downloads);
-
-  chrome.downloads.download = function downloadWithNoteSection(options, callback) {
-    if (
-      options?.url?.startsWith('data:text/markdown') &&
-      !NOTE_SECTION_HEADING_RE.test(options.url)
-    ) {
-      const decoded = decodeMarkdownDataUrl(options.url);
-      if (decoded) {
-        const markdown = appendNoteSectionToMarkdown(decoded.markdown).replace('{{note}}', '');
-        options = {
-          ...options,
-          url: encodeMarkdownDataUrl({ ...decoded, markdown }),
-        };
-      }
-    }
-
-    return originalDownload(options, callback);
-  };
-
-  chrome.downloads.download.__paperOneStepNotePatch = true;
-}
-
-migrateSavedMarkdownTemplateNoteSection().catch((error) => {
-  console.warn('Failed to migrate markdown template note section:', error);
-});
-patchMarkdownDownloadNoteSection();

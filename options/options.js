@@ -58,6 +58,8 @@ pdf: "{{pdf_link}}"
 
 {{note}}
 
+{{reading_assistant}}
+
 \`\`\`bibtex
 {{bibtex}}
 \`\`\`
@@ -73,24 +75,30 @@ const addMappingBtn = document.getElementById('addMappingBtn');
 const resetTemplateBtn = document.getElementById('resetTemplateBtn');
 const saveBtn = document.getElementById('saveBtn');
 const statusEl = document.getElementById('status');
+let statusTimer;
 
 function createMappingRow(category, tags) {
   const row = document.createElement('div');
   row.className = 'mapping-row';
   row.innerHTML = `
-    <input type="text" class="input-reset mapping-category" value="${escapeHtml(category || '')}" placeholder="cs.CL">
+    <input type="text" class="input-reset mapping-category" placeholder="cs.CL">
     <span class="arrow">&rarr;</span>
-    <input type="text" class="input-reset mapping-tags" value="${escapeHtml((tags || []).join(', '))}" placeholder="nlp, llm">
-    <button class="btn-remove" title="${chrome.i18n.getMessage('optDeleteMapping') || 'Delete'}">&times;</button>
+    <input type="text" class="input-reset mapping-tags" placeholder="nlp, llm">
+    <button type="button" class="btn-remove">&times;</button>
   `;
-  row.querySelector('.btn-remove').addEventListener('click', () => row.remove());
+  const categoryInput = row.querySelector('.mapping-category');
+  const tagsInput = row.querySelector('.mapping-tags');
+  categoryInput.value = category || '';
+  tagsInput.value = Array.isArray(tags) ? tags.join(', ') : '';
+  categoryInput.setAttribute('aria-label', chrome.i18n.getMessage('optMappingCategory'));
+  tagsInput.setAttribute('aria-label', chrome.i18n.getMessage('optDefaultTagsTitle'));
+  const remove = row.querySelector('.btn-remove');
+  remove.setAttribute('aria-label', chrome.i18n.getMessage('optDeleteMapping'));
+  remove.addEventListener('click', () => {
+    row.remove();
+    addMappingBtn.focus();
+  });
   return row;
-}
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
 }
 
 function renderMappings(mappings) {
@@ -101,7 +109,7 @@ function renderMappings(mappings) {
 }
 
 function getMappingsFromDOM() {
-  const mappings = {};
+  const mappings = Object.create(null);
   const rows = mappingsContainer.querySelectorAll('.mapping-row');
   rows.forEach(row => {
     const category = row.querySelector('.mapping-category').value.trim();
@@ -125,10 +133,11 @@ resetTemplateBtn.addEventListener('click', () => {
 });
 
 function showStatus(msg, type) {
+  clearTimeout(statusTimer);
   statusEl.textContent = msg;
   statusEl.className = 'status ' + type;
   statusEl.classList.remove('hidden');
-  setTimeout(() => statusEl.classList.add('hidden'), 2500);
+  if (type === 'success') statusTimer = setTimeout(() => statusEl.classList.add('hidden'), 4000);
 }
 
 function isValidSaveSubdir(subdir) {
@@ -154,8 +163,21 @@ saveBtn.addEventListener('click', async () => {
   const tagMappings = getMappingsFromDOM();
   const markdownTemplate = templateInput.value;
 
-  await chrome.storage.local.set({ saveSubdir, downloadPdfByDefault, filenameRule, defaultTags, tagMappings, markdownTemplate });
-  showStatus(chrome.i18n.getMessage('optSettingsSaved') || 'Settings saved successfully!', 'success');
+  try {
+    const readingConfig = globalThis.PaperReadingSettings.read();
+    saveBtn.disabled = true;
+    saveBtn.setAttribute('aria-busy', 'true');
+    // Request host access inside the original Save click gesture.
+    if (!await globalThis.PaperReadingSettings.authorize(readingConfig)) throw new Error('readerPermissionNeeded');
+    await chrome.storage.local.set({ saveSubdir, downloadPdfByDefault, filenameRule, defaultTags, tagMappings, markdownTemplate, readingConfig });
+    showStatus(chrome.i18n.getMessage('optSettingsSaved') || 'Settings saved successfully!', 'success');
+  } catch (error) {
+    const key = /^reader[A-Z]/.test(error.message) ? error.message : 'readerStorageFailed';
+    showStatus(chrome.i18n.getMessage(key), 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.removeAttribute('aria-busy');
+  }
 });
 
 (async () => {
@@ -163,36 +185,7 @@ saveBtn.addEventListener('click', async () => {
   saveSubdirInput.value = result.saveSubdir || 'Papers/arxiv';
   downloadPdfByDefaultInput.checked = result.downloadPdfByDefault !== false;
   filenameRuleInput.value = result.filenameRule || '{{safe_title}}';
-  defaultTagsInput.value = (result.defaultTags || ['status/read']).join(', ');
+  defaultTagsInput.value = (Array.isArray(result.defaultTags) ? result.defaultTags : ['status/read']).join(', ');
   renderMappings(result.tagMappings || DEFAULT_MAPPINGS);
   templateInput.value = result.markdownTemplate || DEFAULT_TEMPLATE;
-})();
-const OPTIONS_NOTE_SECTION_HEADING_RE = /^#{1,6}\s+Note\s*$/im;
-
-function appendNoteSectionToSavedTemplate(template) {
-  if (typeof template !== 'string' || OPTIONS_NOTE_SECTION_HEADING_RE.test(template)) {
-    return template;
-  }
-
-  return `${template.replace(/\s+$/, '')}\n\n---\n\n# Note\n\n{{note}}\n`;
-}
-
-async function migrateOptionsMarkdownTemplateNoteSection() {
-  if (typeof chrome === 'undefined' || !chrome.storage?.local) {
-    return;
-  }
-
-  const { markdownTemplate } = await chrome.storage.local.get('markdownTemplate');
-  if (typeof markdownTemplate !== 'string' || !markdownTemplate.trim()) {
-    return;
-  }
-
-  const nextTemplate = appendNoteSectionToSavedTemplate(markdownTemplate);
-  if (nextTemplate !== markdownTemplate) {
-    await chrome.storage.local.set({ markdownTemplate: nextTemplate });
-  }
-}
-
-migrateOptionsMarkdownTemplateNoteSection().catch((error) => {
-  console.warn('Failed to migrate options markdown template note section:', error);
-});
+})().catch(() => showStatus(chrome.i18n.getMessage('readerStorageFailed'), 'error'));

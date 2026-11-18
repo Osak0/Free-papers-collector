@@ -150,7 +150,7 @@
     "message": "Markdown Template"
   },
   "optTemplateHint": {
-    "message": "Variables: title, authors, authors_wikilinks, year, venue, latest_year, latest_venue, preprint_year, preprint_venue, published_year, published_venue, publication_status, publication_timeline, tags, arxiv_id, doi, pdf_url, pdf_filename, pdf_link, web_url, abstract, safe_title, citation_count, note, bibtex."
+    "message": "Variables: title, authors, authors_wikilinks, year, venue, latest_year, latest_venue, preprint_year, preprint_venue, published_year, published_venue, publication_status, publication_timeline, tags, arxiv_id, doi, pdf_url, pdf_filename, pdf_link, web_url, abstract, safe_title, citation_count, note, bibtex, reading_assistant."
   },
   "optTemplateReset": {
     "message": "Reset to Default"
@@ -160,5 +160,344 @@
   },
   "optFilenameHint": {
     "message": "Variables: {{safe_title}}, {{first_author}}, {{year}}"
+  },
+  "readerTitle": {
+    "message": "Reading assistant"
+  },
+  "readerIntro": {
+    "message": "Understand methods, formulas and experiments, then explore the knowledge and research steps behind them."
+  },
+  "readerSettings": {
+    "message": "AI settings"
+  },
+  "readerLoad": {
+    "message": "Load paper text"
+  },
+  "readerSelection": {
+    "message": "Use selected text"
+  },
+  "readerImport": {
+    "message": "Import PDF"
+  },
+  "readerExcerpt": {
+    "message": "Passage or formula to explore (optional)"
+  },
+  "readerExcerptHint": {
+    "message": "Paste a passage or LaTeX formula, or use selected text."
+  },
+  "readerMode": {
+    "message": "Explore"
+  },
+  "readerModeOverview": {
+    "message": "Paper overview"
+  },
+  "readerModeMethod": {
+    "message": "Method step by step"
+  },
+  "readerModeFormula": {
+    "message": "Formula and derivation"
+  },
+  "readerModeExperiment": {
+    "message": "Experiments and evidence"
+  },
+  "readerModeLearning": {
+    "message": "Learn the prerequisites"
+  },
+  "readerModeResearch": {
+    "message": "Plan a research verification"
+  },
+  "readerQuestion": {
+    "message": "Your question (optional)"
+  },
+  "readerQuestionHint": {
+    "message": "Which assumption makes this step valid?"
+  },
+  "readerSources": {
+    "message": "Passages sent for analysis"
+  },
+  "readerSendNotice": {
+    "message": "Analyze sends the passages shown above and your question to your configured model service. Nothing is sent automatically."
+  },
+  "readerAnalyze": {
+    "message": "Analyze"
+  },
+  "readerRefresh": {
+    "message": "Refresh collector"
+  },
+  "readerInclude": {
+    "message": "Include this analysis in the saved note"
+  },
+  "readerResultNotice": {
+    "message": "AI explanations may be incorrect. Check cited passages; proposed research steps require validation."
+  },
+  "readerContextSummary": {
+    "message": "$1 · $2 passages · $3 characters"
+  },
+  "readerPartialContext": {
+    "message": "Only a selection of the loaded text will be sent. Conclusions may depend on omitted sections. PDF extraction is limited to 120 pages and documents to 240,000 characters."
+  },
+  "readerScopeAbstract": {
+    "message": "Abstract only"
+  },
+  "readerScopeHtml": {
+    "message": "HTML paper text"
+  },
+  "readerScopePdf": {
+    "message": "Extracted PDF text"
+  },
+  "readerScopePage": {
+    "message": "Available page text"
+  },
+  "readerScopeProvided": {
+    "message": "Provided excerpt"
+  },
+  "readerOpenSource": {
+    "message": "Open source passage"
+  },
+  "readerFollowUp": {
+    "message": "Questions to explore"
+  },
+  "readerKindPaper": {
+    "message": "From the supplied paper text"
+  },
+  "readerKindBackground": {
+    "message": "Background explanation"
+  },
+  "readerKindProposal": {
+    "message": "Proposal to validate"
+  },
+  "readerKindUnknown": {
+    "message": "Not established by the supplied text"
+  },
+  "readerReady": {
+    "message": "Start with the abstract, load paper text, or choose a passage. Configure a model service before analysis."
+  },
+  "readerLoading": {
+    "message": "Loading paper text…"
+  },
+  "readerTextReady": {
+    "message": "Paper text is ready. Check the source passages before analysis."
+  },
+  "readerPdfProgress": {
+    "message": "Extracting PDF page $1 of $2…"
+  },
+  "readerPdfReady": {
+    "message": "PDF text is ready. Check formulas and tables against the original; text extraction can omit symbols or reorder content."
+  },
+  "readerImportedFile": {
+    "message": "Imported: $1. Confirm that this PDF belongs to the displayed paper."
+  },
+  "readerSelectionReady": {
+    "message": "Selected text is ready. You can edit it or load more paper context."
+  },
+  "readerAnalyzing": {
+    "message": "Analyzing the selected passages… You can cancel this request."
+  },
+  "readerDone": {
+    "message": "Analysis is ready. Check the cited passages and choose whether to include it in your note."
+  },
+  "readerCached": {
+    "message": "Loaded the cached analysis for this paper version, context and model."
+  },
+  "readerInvalidEndpoint": {
+    "message": "Enter an HTTPS API base URL without credentials, query parameters or fragments. HTTP is allowed only for localhost."
+  },
+  "readerMissingModel": {
+    "message": "Enter the model ID provided by your model service."
+  },
+  "readerConfigureFirst": {
+    "message": "Open AI settings, enable reading analysis, and configure your endpoint and model."
+  },
+  "readerNoText": {
+    "message": "No usable text is available. Load paper text, import a text-based PDF, or paste a passage."
+  },
+  "readerNoSelection": {
+    "message": "Select a passage on the paper page, then click Use selected text. You can also paste it here."
+  },
+  "readerInvalidResponse": {
+    "message": "The model returned an incomplete or invalid analysis. Try again or choose another model."
+  },
+  "readerInvalidCitations": {
+    "message": "The model returned missing or unknown source citations. The analysis was not accepted; try again."
+  },
+  "readerAuthFailed": {
+    "message": "The model service rejected authentication. Check the API key and account access in settings."
+  },
+  "readerRateLimited": {
+    "message": "The model service rate or usage limit was reached. Wait and retry or check your account allowance."
+  },
+  "readerServiceFailed": {
+    "message": "The model service could not complete the request. Check the endpoint and model, then retry."
+  },
+  "readerTimeout": {
+    "message": "Analysis timed out after 90 seconds. Retry with a shorter passage or a faster model."
+  },
+  "readerCancelled": {
+    "message": "Request cancelled. Your paper collection fields remain available."
+  },
+  "readerNetworkError": {
+    "message": "Could not reach the model service. Check its URL, network connection and host permission."
+  },
+  "readerPermissionNeeded": {
+    "message": "Host access was not granted. Save AI settings to authorize the model service, or retry loading the paper source."
+  },
+  "readerSourceFailed": {
+    "message": "Could not read the paper source. Try importing its PDF or pasting a passage."
+  },
+  "readerSourceTimeout": {
+    "message": "The paper source timed out. Retry or import the PDF from your computer."
+  },
+  "readerFileTooLarge": {
+    "message": "Choose a PDF smaller than 25 MB."
+  },
+  "readerPdfNoText": {
+    "message": "This PDF has no usable text layer. Scanned PDFs need OCR; paste recognized text to continue."
+  },
+  "readerPdfFailed": {
+    "message": "This source could not be parsed as a PDF. Download the real PDF and import it, or paste text."
+  },
+  "readerPageChanged": {
+    "message": "The active paper page changed. Refresh the collector before starting another analysis; refreshing clears unsaved edits."
+  },
+  "readerStorageFailed": {
+    "message": "Could not save settings or cache. Check the browser storage and retry."
+  },
+  "readerCacheCleared": {
+    "message": "Local analysis cache cleared."
+  },
+  "readingSettingsIntro": {
+    "message": "Optional AI analysis using your own OpenAI-compatible chat-completions service. Existing collection features work without it."
+  },
+  "readingEnable": {
+    "message": "Enable AI reading"
+  },
+  "readingEndpoint": {
+    "message": "API base URL"
+  },
+  "readingEndpointHint": {
+    "message": "Use your provider's base URL or full /chat/completions URL. HTTPS is required except for localhost services."
+  },
+  "readingModel": {
+    "message": "Model ID"
+  },
+  "readingApiKey": {
+    "message": "API key (if required by your service)"
+  },
+  "readingKeyHint": {
+    "message": "Stored in this browser profile, not encrypted or synced by this extension. Only sent to the configured model endpoint when you click Analyze."
+  },
+  "readingLanguage": {
+    "message": "Analysis language"
+  },
+  "readingLanguageAuto": {
+    "message": "Follow browser language"
+  },
+  "readingPrivacyHint": {
+    "message": "Only requested passages, paper metadata and your question are sent. Up to ten completed analyses are cached locally. Saving settings grants access only to the service origin you enter."
+  },
+  "readingClearCache": {
+    "message": "Clear analysis cache"
+  },
+  "readerExcerptOnly": {
+    "message": "Use only this excerpt when one is provided"
+  },
+  "readerScopeSelection": {
+    "message": "Selected paper passage"
+  },
+  "readerModeScreen": {
+    "message": "Screen for a research topic"
+  },
+  "readerModeQuick": {
+    "message": "Chinese quick-read card"
+  },
+  "readerModeExplain": {
+    "message": "Explain a passage"
+  },
+  "readerModeQa": {
+    "message": "Ask about the full text"
+  },
+  "readerTopic": {
+    "message": "Research topic"
+  },
+  "readerTopicHint": {
+    "message": "For example, robust evaluation with small samples"
+  },
+  "readerScreenHint": {
+    "message": "Uses the abstract when available. The topic is sent with this request and kept with its local result."
+  },
+  "readerQuickHint": {
+    "message": "Uses the abstract when available. The card is written in Simplified Chinese."
+  },
+  "readerExplainHint": {
+    "message": "Select text on the paper page or paste a passage or formula."
+  },
+  "readerQaHint": {
+    "message": "Load paper text or import a PDF, then ask a question. Relevant passages are selected from the loaded text."
+  },
+  "readerTopicRequired": {
+    "message": "Enter a research topic to screen this paper."
+  },
+  "readerExcerptRequired": {
+    "message": "Select or paste the passage you want explained."
+  },
+  "readerFullTextRequired": {
+    "message": "Load paper text or import a PDF before asking about the full text."
+  },
+  "readerQuestionRequired": {
+    "message": "Enter a question about the paper."
+  },
+  "readerPriority": {
+    "message": "Reading priority"
+  },
+  "readerPriorityHigh": {
+    "message": "High"
+  },
+  "readerPriorityMedium": {
+    "message": "Medium"
+  },
+  "readerPriorityLow": {
+    "message": "Low"
+  },
+  "readerPriorityUncertain": {
+    "message": "Uncertain"
+  },
+  "readerSuggestedTags": {
+    "message": "Suggested tags (comma-separated)"
+  },
+  "readerApplyTags": {
+    "message": "Add to paper tags"
+  },
+  "readerTagsApplied": {
+    "message": "Added the selected tags to the paper."
+  },
+  "extRemoveTag": {
+    "message": "Remove tag $1"
+  },
+  "extDiscardDraft": {
+    "message": "Discard the unsaved edits and reading work for this paper?"
+  },
+  "extSaveWhileAnalyzing": {
+    "message": "Save the current note and close before the analysis finishes?"
+  },
+  "extNoteInterrupted": {
+    "message": "The Markdown download was interrupted. Check Chrome Downloads and retry."
+  },
+  "extNotePending": {
+    "message": "The Markdown download is in progress. Check Chrome Downloads for completion."
+  },
+  "extPdfPending": {
+    "message": "Markdown saved. PDF download is still in progress. The note links to the online PDF."
+  },
+  "extClosePanel": {
+    "message": "Close"
+  },
+  "readerResultSources": {
+    "message": "Sources for this result"
+  },
+  "readerPaperResumed": {
+    "message": "Back on the original paper. Your draft is ready."
+  },
+  "optMappingCategory": {
+    "message": "Paper category"
   }
 }

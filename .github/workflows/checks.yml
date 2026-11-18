@@ -1,0 +1,20 @@
+name: Extension checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/reading.test.cjs
+      - name: Check JavaScript syntax
+        run: |
+          node --check background.js
+          node --check content_script.js
+          node --check popup/popup.js
+          node --check options/options.js
+          for file in reading/*.js; do node --check "$file"; done

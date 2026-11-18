@@ -1,0 +1,3 @@
+# Preserve bundled upstream files and keep GitHub reviews focused on project code.
+vendor/** linguist-vendored=true
+vendor/** -whitespace

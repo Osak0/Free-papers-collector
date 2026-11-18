@@ -224,7 +224,7 @@ function generateSuggestedTags(categories, comments, defaultTags, domain) {
 
 // Extractors
 function extractArxiv() {
-  const arxivId = (window.location.pathname.match(/\/abs\/([^\/]+)/) || window.location.pathname.match(/\/(\d+\.\d+)/))?.[1];
+  const arxivId = (window.location.pathname.match(/\/(?:abs|html)\/([^\/]+)/) || window.location.pathname.match(/\/(\d+\.\d+)/))?.[1];
   if (!arxivId) return null;
 
   const categories = [];
@@ -253,10 +253,10 @@ function extractArxiv() {
   const latestVenue = published?.venue || 'arXiv preprint';
 
   const data = {
-    title: getMeta('citation_title') || document.querySelector('h1.title')?.textContent.replace('Title:', '').trim(),
-    authors: getAllMeta('citation_author'),
+    title: getMeta('citation_title') || document.querySelector('h1.title, .ltx_title_document')?.textContent.replace('Title:', '').trim(),
+    authors: getAllMeta('citation_author').length ? getAllMeta('citation_author') : Array.from(document.querySelectorAll('.ltx_authors .ltx_personname')).map(node => node.textContent.trim()),
     year: latestYear,
-    abstract: getMeta('citation_abstract') || document.querySelector('blockquote.abstract')?.textContent.replace('Abstract:', '').trim(),
+    abstract: getMeta('citation_abstract') || document.querySelector('blockquote.abstract, .ltx_abstract')?.textContent.replace(/^Abstract:?\s*/, '').trim(),
     pdf_url: getMeta('citation_pdf_url') || `https://arxiv.org/pdf/${arxivId}`,
     html_url: `https://arxiv.org/html/${arxivId}`,
     web_url: `https://arxiv.org/abs/${arxivId}`,
@@ -441,6 +441,19 @@ function extractScience() {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'readingSelection') {
+    sendResponse(globalThis.PaperReadingExtractor?.selectionRecord(document, location.href));
+    return false;
+  }
+  if (message.action === 'readingExtract') {
+    if (location.hostname === 'arxiv.org' && location.pathname.startsWith('/abs/')) {
+      const paper = extractArxiv();
+      sendResponse({ scope: 'abstract', records: paper?.abstract ? [{ text: paper.abstract, section: 'Abstract', url: location.href, kind: 'paper' }] : [] });
+    } else {
+      sendResponse(globalThis.PaperReadingExtractor?.extractDocument(document, location.href));
+    }
+    return false;
+  }
   if (message.action === 'extract') {
     const hostname = window.location.hostname;
     let data = null;

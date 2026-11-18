@@ -324,3 +324,11 @@ h1 {
 .hidden {
   display: none;
 }
+
+.reading-settings { margin: 20px 0; padding: 18px 0; border: none; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-width: 0; }
+.reading-settings legend { padding-right: 10px; font-size: 15px; font-weight: 600; }
+.reading-settings label { text-transform: none; letter-spacing: normal; }
+.reading-settings .hint { margin: 8px 0; color: var(--text-main); font-size: 12px; line-height: 1.6; }
+.reading-settings select { background: var(--bg-color); }
+.reading-settings input:disabled, .reading-settings select:disabled { opacity: .5; }
+.reading-settings :focus-visible { outline: 2px solid var(--border-focus); outline-offset: 3px; }
