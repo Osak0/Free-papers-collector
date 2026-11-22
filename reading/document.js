@@ -111,10 +111,13 @@
           const doc = new DOMParser().parseFromString(new TextDecoder().decode(resource.bytes), 'text/html');
           const extracted = root.PaperReadingExtractor.extractDocument(doc, resource.url);
           const result = R.makeSources(extracted.records);
-          if (result.characters > 800) return { ...result, scope: 'html-text' };
+          if (result.characters > 800 || extracted.tables?.length && result.sources.length) return { ...result, tables: extracted.tables, scope: 'html-text' };
         }
       } catch (error) { if (signal?.aborted) throw error; }
     }
+    const extracted = await chrome.tabs.sendMessage(tabId, { action: 'readingExtract' }).catch(() => null);
+    const result = R.makeSources(extracted?.records || []);
+    if (extracted?.tables?.length && result.sources.length) return { ...result, tables: extracted.tables, scope: 'page' };
     if (pdfUrl) {
       try {
         return await loadPdf(pdfUrl, signal, onProgress);
@@ -123,8 +126,6 @@
         pdfError = error;
       }
     }
-    const extracted = await chrome.tabs.sendMessage(tabId, { action: 'readingExtract' }).catch(() => null);
-    const result = R.makeSources(extracted?.records || []);
     if (pdfError && (extracted?.scope === 'abstract' || result.characters < 800)) throw pdfError;
     if (!result.sources.length) throw new Error('readerNoText');
     return { ...result, scope: extracted.scope || 'page' };

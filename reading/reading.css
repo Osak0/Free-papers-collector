@@ -21,6 +21,14 @@
 #readerPageView { margin-top: 8px; }
 #readerPageCanvas { display: block; width: 100%; height: auto; background: #fff; border: 1px solid var(--border-color); }
 .reading-source .reading-link { margin-inline-end: 8px; }
+.reading-table-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(125px, 100%), 1fr)); gap: 8px; }
+.reading-table-rows label { min-width: 0; }
+.reading-table-rows select { margin-top: 4px; }
+#readerTableTools { margin-block: 8px 14px; }
+#readerTableHint { margin-bottom: 4px; }
+#readerResults:focus { outline-offset: 2px; }
+.reading-result-section details > summary { cursor: pointer; font-weight: 600; }
+.reading-result-section details .reading-citation { display: block; text-align: start; }
 .reading-assistant label { display: block; margin: 12px 0 6px; font-size: 12px; color: var(--reading-muted); text-transform: none; letter-spacing: normal; }
 .reading-select { width: 100%; min-height: 36px; padding: 6px 8px; color: var(--text-main); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; font: inherit; }
 .reading-question { min-height: 62px; }

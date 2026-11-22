@@ -33,6 +33,20 @@ nearby passages when available. If you supplied an excerpt, turn off excerpt-onl
 include the selected section alongside it. HTML tables keep their captions, headers, rows and
 available notes as evidence with links back to the original.
 
+Select an HTML table, choose a reference and a comparison row, and click **Read this table**.
+The local comparison shows where the second row is higher, lower or equal in the printed scale.
+Expand a difference to inspect the original pair. Cell references include row and column numbers
+(counting header rows), their labels and available cell, row or table links. The caption, extracted
+notes and other row settings accompany the result. Save it to the reading record, export it to
+Markdown, or explicitly ask the configured model a follow-up using the existing controls.
+
+Percentage differences use percentage points when the cells or the column explicitly use percent.
+Compatible printed units can be subtracted directly. The calculation skips intervals, annotated
+numbers, missing values and mismatched units. Up to six numeric columns are shown, retaining an
+opposing direction when present. A marked metric direction in the column heading can identify which
+row the metric favors. Statistical significance requires additional evidence. Unambiguous grouped column headers are supported; unclear headings, merged body cells
+and oversized tables offer the original source for inspection. PDF reading continues at page level.
+
 Choose **Use paper PDF** after loading HTML to switch to the linked PDF, or import a local file.
 Enter a page number and choose **View and focus**. A citation from
 that PDF also offers a page preview while the PDF is loaded. The preview is rendered locally,

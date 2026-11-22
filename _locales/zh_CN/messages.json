@@ -578,6 +578,96 @@
   "readerFollow": {
     "message": "继续追问"
   },
+  "readerModeTable": {
+    "message": "读懂这张表"
+  },
+  "readerTableReference": {
+    "message": "参照行"
+  },
+  "readerTableCompared": {
+    "message": "比较行"
+  },
+  "readerTableLocalHint": {
+    "message": "在本机比较两行，每个差值都附有两个原始单元格。"
+  },
+  "readerTableLocal": {
+    "message": "本地计算"
+  },
+  "readerKindDerived": {
+    "message": "根据原表计算"
+  },
+  "readerTablePickTwo": {
+    "message": "请选择两个不同的行。"
+  },
+  "readerTableHeaders": {
+    "message": "部分列标题缺失或无法唯一识别，请打开原表核对。"
+  },
+  "readerTableLayout": {
+    "message": "合并单元格或不规则行使数值难以对齐，请在原表中核对行列。"
+  },
+  "readerTableRows": {
+    "message": "比较需要两个带有行名的数据行，请在原表核对行名。"
+  },
+  "readerTableSize": {
+    "message": "这张表超出本地逐格比较的范围，请打开原表查看数值和表注。"
+  },
+  "readerTableNoValues": {
+    "message": "所选两行没有可直接相减的同列数值。请核对缺失值、区间、脚注或单位，也可以改选其他行。"
+  },
+  "readerTableRow": {
+    "message": "第 $1 行 · $2"
+  },
+  "readerTableCell": {
+    "message": "第 $1 行，第 $2 列 · $3 · $4"
+  },
+  "readerTableConditions": {
+    "message": "表题、表注与行条件"
+  },
+  "readerTableAbove": {
+    "message": "在「$1」列更高"
+  },
+  "readerTableBelow": {
+    "message": "在「$1」列更低"
+  },
+  "readerTableEqual": {
+    "message": "在「$1」列相同"
+  },
+  "readerTableJoin": {
+    "message": "，"
+  },
+  "readerTableFinding": {
+    "message": "相较于「$2」，「$1」$3。"
+  },
+  "readerTableFavors": {
+    "message": "按表头标示的优劣方向，「$1」在这一列占优。"
+  },
+  "readerTableDirectionUnknown": {
+    "message": "请核对这项指标的优劣方向，再判断哪一行表现更好。"
+  },
+  "readerTablePrintedScale": {
+    "message": "差值沿用原列刻度；请核对表头、单位说明或表注。"
+  },
+  "readerTableDifference": {
+    "message": "比较行减去参照行：$1"
+  },
+  "readerTablePoints": {
+    "message": "$1 个百分点"
+  },
+  "readerTableMixedLimit": {
+    "message": "这两行在不同列中的差值方向相反，不能据此声称各列数值都提高了。"
+  },
+  "readerTableScopeLimit": {
+    "message": "这个结论只适用于所选两行和表中列出的数值。推广到其他条件需要相应证据。"
+  },
+  "readerTableCheck": {
+    "message": "请到指标定义中核对单位及优劣方向。若要判断差异是否稳定，请在实验设置中查找重复测量或不确定性说明。"
+  },
+  "readerTableLimits": {
+    "message": "还需要核查什么"
+  },
+  "readerTableCoverage": {
+    "message": "当前展示 $2 个可比较列中的 $1 个。"
+  },
   "readerOnlinePdf": {
     "message": "使用论文 PDF"
   }

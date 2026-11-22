@@ -70,7 +70,8 @@
         const part = text.slice(offset, Math.min(offset + 1400, offset + MAX_DOCUMENT - total));
         sources.push({ id: `S${sources.length + 1}`, text: part, section: cleanText(record.section).slice(0, 180),
           locator: cleanText(record.locator).slice(0, 180), url: safeSourceUrl(record.url), kind: record.kind || 'paper',
-          ...(record.page ? { page: record.page, pdfId: record.pdfId } : {}), ...(record.format ? { format: record.format } : {}) });
+          ...(record.page ? { page: record.page, pdfId: record.pdfId } : {}), ...(record.format ? { format: record.format } : {}),
+          ...(record.tableId ? { tableId: record.tableId } : {}) });
         total += part.length;
       }
       if (truncated) break;
@@ -80,9 +81,9 @@
 
   function focusSources(document, { section = '', page = 0, table = '' } = {}) {
     if (!section && !page && !table) return document;
-    const target = source => page ? source.page === page : table ? source.format === 'table' && source.locator === table : source.section === section;
-    const focus = page ? `PDF p. ${page}` : table || section;
+    const target = source => page ? source.page === page : table ? source.format === 'table' && (source.tableId || source.locator) === table : source.section === section;
     const matching = document.sources.filter(target);
+    const focus = page ? `PDF p. ${page}` : table ? matching[0]?.locator || table : section;
     if (!matching.length) return { ...document, sources: [], focus };
     const neighbors = new Set();
     document.sources.forEach((source, index) => {
@@ -193,8 +194,8 @@
   function formatReport(report, level = 2) {
     const heading = '#'.repeat(level);
     const childHeading = heading + '#';
-    const labels = { paper: 'Paper evidence', background: 'Background explanation', proposal: 'Proposal to validate', unknown: 'Not established by the supplied text' };
-    const lines = [`${heading} ${level === 2 ? 'Reading assistant' : 'Analysis'}`, '', `- Mode: ${noteText(report.mode)}`, `- Model: ${noteText(report.model)}`, `- Generated: ${report.createdAt}`,
+    const labels = { paper: 'Paper evidence', derived: 'Calculated from table cells', background: 'Background explanation', proposal: 'Proposal to validate', unknown: 'Not established by the supplied text' };
+    const lines = [`${heading} ${level === 2 ? 'Reading assistant' : 'Analysis'}`, '', `- Mode: ${noteText(report.mode)}`, `- ${report.mode === 'table' ? 'Calculation' : 'Model'}: ${noteText(report.model)}`, `- Generated: ${report.createdAt}`,
       `- Source scope: ${report.context.scope}; ${report.context.sources.length} passages; ${report.context.omitted} passages omitted`,
       `- Paper/version: ${noteText(report.paperKey)}`, '', noteText(report.analysis.summary), ''];
     if (report.question) lines.push(`Question: ${noteText(report.question)}`, '');
