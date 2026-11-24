@@ -5,6 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const R = require('../reading/core.js');
 const Model = require('../reading/model.js');
+const Table = require('../reading/table.js');
 const root = path.resolve(__dirname, '..');
 const sources = [{ id: 'S1', text: 'A randomized control is compared using the same measurements.', kind: 'paper', section: 'Study design', url: 'https://example.org/paper#study' }];
 const good = { summary: 'A study-design explanation.', sections: [
@@ -195,6 +196,58 @@ test('reading exports preserve LaTeX while escaping model HTML and image transcl
   assert.doesNotMatch(output, /<img/);
   assert.match(output, /&lt;img/);
   assert.match(output, /\\!\[\[private-note\]\]/);
+});
+
+function numericTable(columns, first, second) {
+  return { columns: ['Method', ...columns], rows: [first, second].map((row, index) => [
+    { text: index ? 'New' : 'Base', rowNumber: index + 2 }, ...row.map(text => ({ text }))
+  ]), url: 'https://example.org/paper#results', caption: 'Control conditions', locator: 'Table 1' };
+}
+
+test('local table arithmetic preserves direction, percentage points and matching printed units', () => {
+  const table = numericTable(['Accuracy (%)', 'Rate', 'Latency', 'Score'], ['70', '81%', '3.3 ms', '−2'], ['77', '79%', '3.1 ms', '−2']);
+  assert.deepEqual(Table.compare(table, 0, 1).map(v => [v.delta, v.percent, v.unit]),
+    [[7, true, '%'], [-2, true, '%'], [-0.2, false, 'ms'], [0, false, '']]);
+  assert.equal(Table.compare(table, 1, 0)[0].delta, -7);
+  assert.deepEqual(Table.compare(table, 1, 1), []);
+});
+
+test('missing values, uncertainty, incompatible units and marked-up numbers cannot become scalar evidence', () => {
+  const table = numericTable(['A', 'B', 'C', 'D', 'E', 'F'], ['—', '2 ± 1', '5 ms', '40%', '10', '4–5'], ['2', '4', '1 s', '44', '12', '6']);
+  table.rows[0][5].annotated = true;
+  assert.deepEqual(Table.compare(table, 0, 1), []);
+  assert.throws(() => Table.reportFor(table, 0, 1, key => key), /readerTableNoValues/);
+});
+
+test('a counterexample beyond the first six columns remains visible, cited and exportable', () => {
+  const table = numericTable(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], Array(8).fill('10'), ['10', '11', '12', '13', '14', '15', '16', '9']);
+  const t = (key, args = []) => [key, ...args].join(' ');
+  const report = Table.reportFor(table, 0, 1, t);
+  assert.match(report.analysis.summary, /readerTableAbove B.*readerTableBelow H/);
+  const proof = report.analysis.sections.find(section => section.title === 'H');
+  assert.deepEqual(proof.sources, ['R2C9', 'R3C9']);
+  assert.deepEqual(proof.operands, ['Base · 10', 'New · 9']);
+  assert.match(report.analysis.sections.at(-1).text, /readerTableCoverage 6 8/);
+  assert.equal(report.context.sources.length, 13);
+});
+
+test('different tables with the same caption have distinct focus targets', () => {
+  const records = ['T1', 'T2'].map(tableId => ({ text: 'Matching caption and contents', locator: 'Results', format: 'table', tableId }));
+  const document = R.makeSources(records);
+  const focus = R.focusSources(document, { table: 'T2' });
+  assert.deepEqual([...focus.priority], ['S2']);
+  assert.equal(focus.focus, 'Results');
+});
+
+test('only explicit metric directions support preference; incompatible printed units are skipped', () => {
+  const table = numericTable(['Time (ms) ↓', 'Accuracy ↑', 'Score', 'Mass (kg)'], ['30', '80', '20', '15 mg'], ['35', '82', '25', '30 mg']);
+  const t = (key, args = []) => [key, ...args].join(' ');
+  const report = Table.reportFor(table, 0, 1, t);
+  const derived = report.analysis.sections.filter(section => section.type === 'derived');
+  assert.equal(derived.length, 3);
+  assert.match(derived[0].text, /readerTableFavors Base/);
+  assert.match(derived[1].text, /readerTableFavors New/);
+  assert.match(derived[2].text, /readerTableDirectionUnknown/);
 });
 
 test('new UI and error strings exist in both locales and executable assets are local', () => {

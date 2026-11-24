@@ -578,6 +578,96 @@
   "readerFollow": {
     "message": "Ask a follow-up"
   },
+  "readerModeTable": {
+    "message": "Read this table"
+  },
+  "readerTableReference": {
+    "message": "Reference row"
+  },
+  "readerTableCompared": {
+    "message": "Compare row"
+  },
+  "readerTableLocalHint": {
+    "message": "Compare two rows locally. The original cells stay available beside each difference."
+  },
+  "readerTableLocal": {
+    "message": "Local arithmetic"
+  },
+  "readerKindDerived": {
+    "message": "Calculated from table cells"
+  },
+  "readerTablePickTwo": {
+    "message": "Choose two different rows."
+  },
+  "readerTableHeaders": {
+    "message": "The column headings could not be identified uniquely. Check them in the original table."
+  },
+  "readerTableLayout": {
+    "message": "Merged cells or irregular rows prevent a reliable match. Use the original table to check the row and column."
+  },
+  "readerTableRows": {
+    "message": "Two labeled data rows are needed for a comparison. Check the row labels in the original."
+  },
+  "readerTableSize": {
+    "message": "This table exceeds the local comparison limit. Open it at the source to check its values and notes."
+  },
+  "readerTableNoValues": {
+    "message": "No directly comparable numeric pair was found. Check for missing values, intervals, annotations or different units, or choose other rows."
+  },
+  "readerTableRow": {
+    "message": "Row $1 · $2"
+  },
+  "readerTableCell": {
+    "message": "Row $1, column $2 · $3 · $4"
+  },
+  "readerTableConditions": {
+    "message": "Caption, notes and row conditions"
+  },
+  "readerTableAbove": {
+    "message": "higher in $1"
+  },
+  "readerTableBelow": {
+    "message": "lower in $1"
+  },
+  "readerTableEqual": {
+    "message": "equal in $1"
+  },
+  "readerTableJoin": {
+    "message": "; "
+  },
+  "readerTableFinding": {
+    "message": "Compared with $2, $1 is $3."
+  },
+  "readerTableFavors": {
+    "message": "According to the direction marked in the column heading, $1 is favored in this column."
+  },
+  "readerTableDirectionUnknown": {
+    "message": "Check which direction the metric favors before interpreting performance."
+  },
+  "readerTablePrintedScale": {
+    "message": "The difference uses the printed scale. Check the heading or notes for units."
+  },
+  "readerTableDifference": {
+    "message": "Compared row minus reference: $1"
+  },
+  "readerTablePoints": {
+    "message": "$1 percentage points"
+  },
+  "readerTableMixedLimit": {
+    "message": "The differences go in opposite directions. An increase in every column is ruled out for this pair."
+  },
+  "readerTableScopeLimit": {
+    "message": "This comparison covers the selected rows and reported values. Other settings require their own evidence."
+  },
+  "readerTableCheck": {
+    "message": "Check the units and which direction is desirable in the metric definition. To judge stability, look for repeated measurements or uncertainty in the experimental setup."
+  },
+  "readerTableLimits": {
+    "message": "What still needs checking"
+  },
+  "readerTableCoverage": {
+    "message": "Showing $1 of $2 comparable columns."
+  },
   "readerOnlinePdf": {
     "message": "Use paper PDF"
   }

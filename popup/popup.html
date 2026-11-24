@@ -87,6 +87,15 @@
             <div id="readerSectionControl" hidden>
               <label for="readerSection" data-i18n="readerFocusSection">Focus on a section</label>
               <select id="readerSection" class="reading-select"></select>
+              <div id="readerTableTools" hidden>
+                <div id="readerTableRows" class="reading-table-rows">
+                  <label><span data-i18n="readerTableReference">Reference row</span><select id="readerTableFirst" class="reading-select"></select></label>
+                  <label><span data-i18n="readerTableCompared">Compare row</span><select id="readerTableSecond" class="reading-select"></select></label>
+                </div>
+                <button type="button" id="readerReadTable" class="btn btn-secondary" data-i18n="readerModeTable">Read this table</button>
+                <p id="readerTableHint" class="reading-hint" role="status"></p>
+                <a id="readerTableOriginal" class="reading-link" target="_blank" rel="noopener noreferrer" data-i18n="readerOpenSource">Open source</a>
+              </div>
             </div>
             <div id="readerPageControl" hidden>
               <label for="readerPageNumber" data-i18n="readerFocusPage">PDF page number</label>
@@ -206,6 +215,7 @@
   <script src="../vendor/katex/auto-render.min.js"></script>
   <script src="../reading/core.js"></script>
   <script src="../reading/extract.js"></script>
+  <script src="../reading/table.js"></script>
   <script src="../reading/model.js"></script>
   <script src="../reading/document.js"></script>
   <script src="../reading/journal.js"></script>

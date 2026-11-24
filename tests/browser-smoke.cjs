@@ -167,7 +167,38 @@ async function main() {
     responseDelay = 0;
 
     await page.locator('#readerExcerpt').fill('');
-    await page.locator('#readerSection').selectOption('table:Table 1: Stability');
+    await page.locator('#readerSection').selectOption('table:T2');
+    const callsBeforeTable = calls;
+    await page.locator('#readerReadTable').click();
+    await page.getByText('Calculated from table cells', { exact: true }).first().waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await page.screenshot({ path: path.join(results, 'table-comparison.png'), animations: 'disabled' });
+    const tableNote = await page.evaluate(() => PaperReadingUI.getExport());
+    assert.match(tableNote, /higher in Accuracy \(%\) \/ Dataset A; lower in Accuracy \(%\) \/ Dataset B/);
+    assert.match(tableNote, /\+7 percentage points/);
+    assert.match(tableNote, /-2 percentage points/);
+    assert.match(tableNote, /Five examples per class/);
+    assert.match(tableNote, /#new-b/);
+    await page.locator('#readerResults summary').filter({ hasText: '-2 percentage points' }).click();
+    await page.getByRole('button', { name: /R4C3/ }).click();
+    assert.match(await page.locator('#reader-cite-R4C3').textContent(), /Proposed.*Dataset B.*79/s);
+    assert.equal(await page.locator('#reader-cite-R4C3').evaluate(node => node === document.activeElement), true);
+    await page.locator('#readerTableSecond').selectOption('2');
+    await page.locator('#readerReadTable').click();
+    await page.getByText(/No directly comparable numeric pair/).waitFor();
+    assert.equal(await page.evaluate(() => PaperReadingUI.getExport()), '');
+    await page.locator('#readerTableSecond').selectOption('0');
+    assert.equal(await page.locator('#readerReadTable').isDisabled(), true);
+    assert.equal(calls, callsBeforeTable);
+    const fallback = await page.evaluate(() => {
+      const extract = inner => PaperReadingExtractor.extractDocument(new DOMParser().parseFromString(
+        '<article><table>' + inner + '</table></article>', 'text/html'), 'https://example.org/paper').tables[0];
+      const merged = extract('<thead><tr><th>Model</th><th>A</th></tr></thead><tr><td rowspan="2">One</td><td>1</td></tr><tr><td>2</td></tr>');
+      const unknown = extract('<tr><td>Blue</td><td>10</td></tr><tr><td>Red</td><td>20</td></tr>');
+      return [merged.reason, unknown.reason];
+    });
+    assert.deepEqual(fallback, ['readerTableLayout', 'readerTableHeaders']);
+    await page.locator('#readerSection').selectOption('table:T1');
     await page.locator('#readerMode').selectOption('experiment');
     await page.locator('#readerQuestion').fill('How does the table compare variance?');
     await page.locator('#readerAnalyze').click();
@@ -274,7 +305,11 @@ async function main() {
       const html = fs.readFileSync(path.join(fixtureDir, 'mevis.html'), 'utf8');
       const htmlStats = await resumed.evaluate(html => {
         const parsed = new DOMParser().parseFromString(html, 'text/html');
-        const { records } = PaperReadingExtractor.extractDocument(parsed, 'https://arxiv.org/html/2512.10945');
+        const { records, tables } = PaperReadingExtractor.extractDocument(parsed, 'https://arxiv.org/html/2512.10945');
+        const results = tables.find(table => table.url.endsWith('#S5.T2.19'));
+        const comparison = PaperReadingTable.compare(results, 0, 1);
+        const mevis = comparison.find(item => item.heading === 'MeViS');
+        if (!mevis || mevis.delta !== 3.2 || results.rows[1][mevis.col].anchor !== 'S5.T2.19.3.6') throw new Error('Published MeViS cells do not match');
         return { table: records.some(item => item.format === 'table' && /Table (?:\d+|[IVXLCDM]+)\s*:/i.test(item.locator) && item.text.includes('Row ')),
           math: records.some(item => /\$[^$]+\$/.test(item.text)), sections: new Set(records.map(item => item.section)).size };
       }, html);

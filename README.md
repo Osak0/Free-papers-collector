@@ -12,6 +12,7 @@ PaperOneStep is a vanilla JavaScript Chrome Manifest V3 extension for researcher
 - **Publication enrichment**: uses page metadata, arXiv comments, Semantic Scholar, and Crossref to show the latest known publication venue while preserving the preprint timeline.
 - **Optional reading assistant**: explore methods, formulas, experiments, prerequisite knowledge, and research verification plans using a model service you configure. Analysis separates paper evidence, background explanations, and proposals, with links to the supplied source passages.
 - **Paper text and formulas**: read available arXiv HTML, extract text from PDFs, import a local PDF, or focus on a selected/pasted passage. Math is rendered locally; scanned PDFs require separately recognized text.
+- **Read this table**: choose two labeled rows from an HTML table, inspect their differences and open the source cells. Captions and notes accompany the comparison. This runs locally, including when AI is disabled.
 - **Configurable workflow**: customize save subdirectory, filename rule, default tags, category-to-tag mappings, and the Markdown template.
 - **Side panel UI**: uses Chrome's `sidePanel` API so the paper page remains visible while you edit metadata.
 - **Light/dark mode and i18n**: native CSS dark mode and English/Simplified Chinese localization.

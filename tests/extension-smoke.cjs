@@ -50,6 +50,20 @@ async function main() {
     await popup.locator('#readerSources .reading-source').first().waitFor();
     assert.match(await popup.locator('#readerSources').textContent(), /x = y \+ z/);
     assert.equal(await popup.locator('#saveBtn').isEnabled(), true);
+    await popup.locator('#readerSection').selectOption('table:T2');
+    await popup.locator('#readerReadTable').click();
+    await popup.locator('#readerResults .reading-kind-derived').first().waitFor();
+    await popup.locator('#readerPin').click();
+    await popup.waitForFunction(() => document.querySelectorAll('#readerJournalEntries input').length === 1);
+    await popup.reload();
+    await popup.locator('#readerPanel > summary').click();
+    await popup.locator('#readerJournal > summary').click();
+    await popup.locator('#readerJournalEntries button').first().click();
+    const tableExport = await popup.evaluate(() => PaperReadingUI.getExport());
+    assert.match(tableExport, /#base-a/);
+    assert.match(tableExport, /#new-b/);
+    assert.match(tableExport, /Five examples per class/);
+    assert.ok(!tableExport.includes('$1'));
 
     // Exercise the content script and MathML-to-TeX selection on a real paper tab.
     await paperPage.goto(paper.html_url);
@@ -81,12 +95,12 @@ async function main() {
     }), true);
 
     // Save through the actual background worker/downloads API, with notifications silenced in this test profile.
-    await worker.evaluate(async paper => {
+    await worker.evaluate(async ({ paper, tableExport }) => {
       chrome.notifications.create = async () => '';
       await chrome.storage.local.set({ saveSubdir: 'Papers/Test', filenameRule: '{{first_author}}_{{year}}',
         markdownTemplate: '# {{title}}\n## Note\n{{note}}\n{{reading_assistant}}' });
-      return handleSave({ ...paper, note: 'Native manual note.', reading_assistant: '## Reading assistant\nNative analysis export.' }, [], false, { downloadPdf: false });
-    }, paper);
+      return handleSave({ ...paper, note: 'Native manual note.', reading_assistant: tableExport }, [], false, { downloadPdf: false });
+    }, { paper, tableExport });
     let saved;
     for (let attempt = 0; attempt < 30; attempt++) {
       const items = await worker.evaluate(() => chrome.downloads.search({ limit: 5, orderBy: ['-startTime'] }));
@@ -98,7 +112,8 @@ async function main() {
     assert.ok(path.resolve(saved.filename).startsWith(downloads + path.sep), saved.filename);
     const markdown = fs.readFileSync(saved.filename, 'utf8');
     assert.match(markdown, /Native manual note/);
-    assert.match(markdown, /Native analysis export/);
+    assert.match(markdown, /#new-b/);
+    assert.match(markdown, /R3C3/);
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({ nativeExtension: id, browser: context.browser().version(), assertions: 'passed',
       coverage: ['native manifest and service worker', 'optional origins remain ungranted', 'AI disabled by default', 'content-script metadata', 'HTML full text', 'MathML selection', 'local PDF worker under actual MV3 CSP', 'local math renderer', 'actual Markdown download and manual-note preservation'], extensionRoot: root, download: saved.filename }));

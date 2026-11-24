@@ -4,7 +4,8 @@
   const $ = id => document.getElementById(id);
   const t = (key, substitutions) => chrome.i18n.getMessage(key, substitutions) || key;
   const controls = ['readerLoad', 'readerSelection', 'readerImport', 'readerMode', 'readerTopic', 'readerQuestion', 'readerExcerpt', 'readerExcerptOnly',
-    'readerAnalyze', 'readerOnlinePdf', 'readerSection', 'readerPageNumber', 'readerOpenPage', 'readerClearPage', 'readerClearFollow', 'readerPin', 'readerFollow'];
+    'readerAnalyze', 'readerOnlinePdf', 'readerSection', 'readerTableFirst', 'readerTableSecond', 'readerReadTable',
+    'readerPageNumber', 'readerOpenPage', 'readerClearPage', 'readerClearFollow', 'readerPin', 'readerFollow'];
   let current;
   let sourceDocument = { sources: [], scope: 'abstract' };
   let abstractDocument = sourceDocument;
@@ -32,12 +33,17 @@
       for (const id of ['readerMode', 'readerExcerpt', 'readerExcerptOnly']) $(id).disabled = true;
     }
     $('readerFollow').disabled ||= !report?.context.sources.length;
+    $('readerReadTable').disabled ||= !canReadTable();
     $('readerCancel').hidden = !value;
     $('readerPanel').setAttribute('aria-busy', String(value));
   }
 
   function context() {
-    if (followReport) return followReport.context;
+    if (followReport) {
+      const previous = followReport.context;
+      if (previous.characters <= R.MAX_CONTEXT) return previous;
+      return R.selectContext({ ...previous, focusOmitted: previous.omitted }, 'qa', $('readerQuestion').value);
+    }
     const mode = $('readerMode').value;
     const useAbstract = ['screen', 'quick'].includes(mode) && abstractDocument.sources.length > 0;
     const excerpt = useAbstract ? '' : $('readerExcerpt').value;
@@ -77,13 +83,52 @@
     $('readerPageNumber').value = '';
     $('readerPageNumber').max = pdf?.pageCount || '';
     const sections = pdf || document.scope === 'abstract' ? [] : [...new Set(document.sources.map(source => source.section).filter(Boolean))];
-    const tables = [...new Set(document.sources.filter(source => source.format === 'table').map(source => source.locator).filter(Boolean))];
+    const tables = new Map(document.sources.filter(source => source.format === 'table').map(source => [source.tableId || source.locator, source.locator]));
     const select = $('readerSection');
     select.replaceChildren(new Option(t('readerAllSections'), ''), ...sections.map(section => new Option(section, `section:${section}`)),
-      ...tables.map(table => new Option(`▦ ${table}`, `table:${table}`)));
-    $('readerSectionControl').hidden = !sections.length && !tables.length;
-    $('readerEvidence').hidden = !pdf && !sections.length && !tables.length;
+      ...Array.from(tables, ([id, label]) => new Option(`▦ ${label}`, `table:${id}`)));
+    $('readerSectionControl').hidden = !sections.length && !tables.size;
+    $('readerEvidence').hidden = !pdf && !sections.length && !tables.size;
+    updateTableTools();
     renderSources();
+  }
+
+  function selectedTable() {
+    const selection = $('readerSection').value;
+    return selection.startsWith('table:') && sourceDocument.tables?.find(table => table.id === selection.slice(6));
+  }
+
+  function canReadTable() {
+    const table = selectedTable();
+    return table?.rows && $('readerTableFirst').value !== $('readerTableSecond').value;
+  }
+
+  function resetTableResult() {
+    if (report?.mode !== 'table') return;
+    report = null;
+    $('readerResults').replaceChildren();
+    for (const id of ['readerResultActions', 'readerResultNotice', 'readerCitations', 'readerExportField']) $(id).hidden = true;
+    $('readerInclude').checked = false;
+    status('');
+  }
+
+  function updateTableTools() {
+    resetTableResult();
+    const table = selectedTable();
+    $('readerTableTools').hidden = !table;
+    if (!table) return;
+    const url = R.safeSourceUrl(table.url);
+    $('readerTableOriginal').hidden = !url;
+    $('readerTableOriginal').href = url;
+    $('readerTableRows').hidden = !table.rows;
+    $('readerReadTable').hidden = !table.rows;
+    $('readerTableHint').textContent = t(table.reason || 'readerTableLocalHint');
+    if (!table.rows) return;
+    for (const id of ['readerTableFirst', 'readerTableSecond']) {
+      $(id).replaceChildren(...table.rows.map((row, i) => new Option(t('readerTableRow', [String(row[0].rowNumber), row[0].text]), String(i))));
+    }
+    $('readerTableSecond').selectedIndex = 1;
+    $('readerReadTable').disabled = Boolean(operation) || stale;
   }
 
   function clearPage() {
@@ -129,7 +174,7 @@
   }
 
   function scopeLabel(scope) {
-    return t(({ abstract: 'readerScopeAbstract', 'html-text': 'readerScopeHtml', 'pdf-text': 'readerScopePdf', page: 'readerScopePage', provided: 'readerScopeProvided', selection: 'readerScopeSelection' })[scope] || 'readerScopeProvided');
+    return t(({ abstract: 'readerScopeAbstract', 'html-text': 'readerScopeHtml', 'html-table': 'readerModeTable', 'pdf-text': 'readerScopePdf', page: 'readerScopePage', provided: 'readerScopeProvided', selection: 'readerScopeSelection' })[scope] || 'readerScopeProvided');
   }
 
   function renderSources(selected = context()) {
@@ -186,6 +231,7 @@
     const summary = document.createElement('p');
     summary.textContent = value.analysis.summary;
     result.append(meta, summary);
+    if (value.mode === 'table') result.prepend(summary);
     if (value.analysis.screening) renderScreening(result, report);
     if (value.question) {
       const question = document.createElement('p');
@@ -193,6 +239,7 @@
       question.textContent = `${t('readerQuestion')}: ${value.question}`;
       result.append(question);
     }
+    let firstComparison = true;
     for (const section of value.analysis.sections) {
       const node = document.createElement('section');
       node.className = 'reading-result-section';
@@ -204,18 +251,34 @@
       const text = document.createElement('div');
       text.className = 'reading-prose';
       text.textContent = section.text;
-      node.append(heading, label, text);
-      for (const id of section.sources) {
+      let evidence = node;
+      if (value.mode === 'table' && section.type === 'derived') {
+        evidence = document.createElement('details');
+        const difference = document.createElement('summary');
+        difference.textContent = section.calculation;
+        evidence.append(difference);
+        evidence.open = firstComparison;
+        firstComparison = false;
+        node.append(heading, label, evidence);
+      } else node.append(heading, label, text);
+      for (const [index, id] of section.sources.entries()) {
         const button = document.createElement('button');
         button.type = 'button'; button.className = 'reading-citation'; button.textContent = `[${id}]`;
-        button.setAttribute('aria-label', `${t('readerOpenSource')} ${id}`);
+        if (section.operands) button.textContent = `${section.operands[index]} [${id}]`;
+        button.setAttribute('aria-label', `${t('readerOpenSource')} ${button.textContent}`);
         button.addEventListener('click', () => {
           $('readerCitations').open = true;
           const source = $(`reader-cite-${id}`);
           source?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
           source?.focus();
         });
-        node.append(button);
+        evidence.append(button);
+      }
+      if (section.guidance?.length) {
+        const hint = document.createElement('p');
+        hint.className = 'reading-hint';
+        hint.textContent = section.guidance.join(' ');
+        evidence.append(hint);
       }
       result.append(node);
     }
@@ -230,7 +293,7 @@
     $('readerInclude').checked = !chosenEntries.has(value.id);
     $('readerResultActions').hidden = false;
     $('readerFollow').disabled = stale || !value.context.sources.length;
-    $('readerResultNotice').hidden = false;
+    $('readerResultNotice').hidden = value.mode === 'table';
     if (root.renderMathInElement) root.renderMathInElement(result, { throwOnError: false, trust: false, strict: 'ignore',
       delimiters: [{ left: '$$', right: '$$', display: true }, { left: '\\[', right: '\\]', display: true }, { left: '\\(', right: '\\)', display: false }, { left: '$', right: '$', display: false }] });
   }
@@ -554,9 +617,41 @@
   $('readerMode').addEventListener('change', updateMode);
   $('readerSection').addEventListener('change', () => {
     endFollow();
+    updateTableTools();
     if ($('readerSection').value && ['quick', 'screen'].includes($('readerMode').value)) $('readerMode').value = 'qa';
     updateMode();
   });
+  for (const id of ['readerTableFirst', 'readerTableSecond']) {
+    $(id).addEventListener('change', () => {
+      endFollow();
+      resetTableResult();
+      $('readerReadTable').disabled = !canReadTable();
+      $('readerTableHint').textContent = t(canReadTable() ? 'readerTableLocalHint' : 'readerTablePickTwo');
+      renderSources();
+    });
+  }
+  $('readerReadTable').addEventListener('click', () => void run(async (signal, token) => {
+    await boundTab();
+    if (!canReadTable() || signal.aborted || generation !== token) return;
+    const table = selectedTable();
+    const first = $('readerTableFirst').selectedIndex;
+    const second = $('readerTableSecond').selectedIndex;
+    let reading;
+    try { reading = root.PaperReadingTable.reportFor(table, first, second, t); }
+    catch (error) {
+      if (error.message !== 'readerTableNoValues') throw error;
+      $('readerTableHint').textContent = t(error.message);
+      return;
+    }
+    const id = await R.fingerprint([current.key, table.id, first, second, reading]);
+    if (signal.aborted || generation !== token) return;
+    endFollow();
+    renderReport({ ...reading, id, paperKey: current.key, mode: 'table', model: t('readerTableLocal'), createdAt: new Date().toISOString() });
+    status('');
+    $('readerResults').tabIndex = -1;
+    $('readerResults').focus();
+    $('readerResults').scrollIntoView({ block: 'start' });
+  }));
   $('readerOpenPage').addEventListener('click', () => viewPage($('readerPageNumber').valueAsNumber));
   $('readerPageNumber').addEventListener('keydown', event => {
     if (event.key === 'Enter') { event.preventDefault(); viewPage(event.currentTarget.valueAsNumber); }
